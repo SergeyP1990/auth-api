@@ -5,7 +5,7 @@
 CREATE SCHEMA IF NOT EXISTS auth_users;
 
 -- Пользователи
-CREATE TABLE IF NOT EXISTS auth_users.user
+CREATE TABLE IF NOT EXISTS auth_users.users
 (
     id           uuid PRIMARY KEY,
     email        TEXT NOT NULL,

@@ -8,10 +8,8 @@ def create_app():
     init_db(app)
     app.app_context().push()
     db.create_all()
-
     from api.v1 import user
     app.register_blueprint(user.user_register)
-
     return app
 
 

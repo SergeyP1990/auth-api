@@ -4,14 +4,13 @@ import uuid
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 
-from db import db
+from db.db import db
 
 logger = logging.getLogger(__name__)
 
 
 class MixinIdDate(db.Model):
     __abstract__ = True
-
     id = db.Column(UUID(as_uuid=True),
                    primary_key=True,
                    default=uuid.uuid4,
@@ -31,7 +30,7 @@ class User(MixinIdDate):
     full_name = db.Column(db.String(length=256))
     phone_number = db.Column(db.String(length=12), nullable=False)
     auth_history = db.relationship('AuthHistory',
-                                   backref='user',
+                                   backref='users',
                                    lazy='dynamic')
 
     def __repr__(self):
@@ -50,13 +49,11 @@ class Role(MixinIdDate):
 class UserRole(MixinIdDate):
     __tablename__ = 'user_role'
     __table_args__ = (UniqueConstraint("user_id", "role_id"),)
-
-    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("user.id"))
-    role_id = db.Column(UUID(as_uuid=True), db.ForeignKey("role.id"))
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"))
+    role_id = db.Column(UUID(as_uuid=True), db.ForeignKey("roles.id"))
 
 
 class AuthHistory(MixinIdDate):
     __tablename__ = 'auth_history'
-
-    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("user.id"))
+    user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"))
     user_agent = db.Column(db.String, nullable=False)
