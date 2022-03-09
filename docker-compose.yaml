@@ -59,3 +59,4 @@ volumes:
     external: true
   redis_data:
     name: redis_data
+    external: true
