@@ -1,16 +1,22 @@
 from flask import Blueprint, request, Response
+from service.user_logic import register_new_user
 
 user_register = Blueprint("user_register", __name__, url_prefix="/user")
 
 
 @user_register.route("/register", methods=["POST"])
 def register():
-    print("REGUSTER_CALL")
-    if request.method == 'POST':
-        print("REQUEST IS POST")
+    if request.method == "POST":
         request_data = request.get_json()
 
-        username = request_data['username']
-        password = request_data['password']
+        username = request_data["username"]
+        password = request_data["password"]
 
-        return Response("{'a':'b'}", status=200, mimetype="application/json")
+        if username is None or password is None:
+            return Response(status=400, mimetype="application/json")
+
+        result = register_new_user(username, password)
+        if result == "USER_EXISTS":
+            return Response(status=409, mimetype="application/json")
+
+        return Response(status=200, mimetype="application/json")

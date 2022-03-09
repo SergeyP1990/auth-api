@@ -28,7 +28,7 @@ class User(MixinIdDate):
     email = db.Column(db.String(length=256), unique=True, nullable=False)
     password = db.Column(db.String(length=256), nullable=False)
     full_name = db.Column(db.String(length=256))
-    phone_number = db.Column(db.String(length=12), nullable=False)
+    phone_number = db.Column(db.String(length=12), nullable=True)
     auth_history = db.relationship('AuthHistory',
                                    backref='users',
                                    lazy='dynamic')
