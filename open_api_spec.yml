@@ -1,0 +1,344 @@
+openapi: 3.0.0
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/myteam8896/auth-api/1.0.0
+info:
+  description: Auth API
+  version: "1.0.0"
+  title: Auth API
+tags:
+  - name: 'auth_api'
+    description: 'Authentication api'
+  - name: 'role_crud'
+    description: 'API for CRUD for role models'
+
+paths:
+  /user/register:
+    post:
+      summary: зарегистрировать пользователя
+      tags:
+        - auth_api
+      description: Регистрация нового пользователя
+      responses:
+        '200':
+          description: 'successfully registered'
+        '400':
+          description: 'invalid input, object invalid'
+        '409':
+          description: 'user already exists'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        description: Данные пользователя для регистрации
+  /user/login:
+    post:
+      summary: залогинить пользователя
+      tags:
+        - auth_api
+      description: Вход пользователя в систему
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        description: Данные пользователя для входа
+      responses:
+        '200':
+          description: 'successfully logged in'
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: jwtAuthAccess=abcde.1234; jwtAuthRefresh=abcde.3452; Path=/; HttpOnly
+        '401':
+          description: 'auth failed'
+  /user/logout:
+    post:
+      summary: разлогинить пользователя
+      tags:
+        - auth_api
+      description: Выход пользователя из системы
+      responses:
+        '200':
+          description: 'successfully logged out'
+        '401':
+          description: 'auth failed'
+      security:
+        - jwtAuthAccess: []
+        - jwtAuthRefresh: []
+  /user/refresh:
+    post:
+      summary: обновить access токен
+      tags:
+        - auth_api
+      description: Обновить токен доступа
+      responses:
+        '200':
+          description: 'succesfully updated access token'
+        '401':
+          description: 'failed to updated access token'
+      security:
+        - jwtAuthAccess: []
+  /user:
+    put:
+      summary: обновить логин или пароль
+      tags:
+        - auth_api
+      description: Обновить данные логина или пароля
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  example: 123e4567-e89b-12d3-a456-426614174000
+                email:
+                  type: string
+                  format: email
+                  example: myemail@host.com
+                password:
+                  type: string
+                  example: '12345'
+      responses:
+        '200':
+          description: 'succesfully updated user data'
+        '403':
+          description: 'no permissions'
+        '409':
+          description: 'email already taken'
+      security:
+        - jwtAuthAccess: []
+  /user/auth_history:
+    get:
+      summary: получить историю входов в аккаунт
+      tags:
+        - auth_api
+      description: Предоставить историю аутентификации аккаунта
+      security:
+        - jwtAuthAccess: []
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    date:
+                      type: string
+                      format: datetime
+                      example: 'Fri, 04 Mar 2022 19:03:51 +0300'
+                    ip_addres:
+                      type: string
+                      example: '192.168.1.1'
+                    user_agent:
+                      type: string
+                      example: 'Firefox'
+  /role:
+    get:
+      summary: получить список всех ролей
+      tags:
+        - role_crud
+      responses:
+        '200':
+          description: 'OK'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '403':
+          description: 'no permissions'
+      security:
+        - jwtAuthAccess: []
+    post:
+      summary: создать роль
+      tags:
+        - role_crud
+      responses:
+        '200':
+          description: 'OK'
+        '403':
+          description: 'no permissions'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+      security:
+        - jwtAuthAccess: []
+  /role/{role_id}:
+    put:
+      summary: редактировать роль
+      tags:
+        - role_crud
+      responses:
+        '200':
+          description: 'OK'
+        '404':
+          description: 'role not found'
+        '403':
+          description: 'no permissions'
+      parameters:
+        - in: path
+          name: role_id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+      security:
+        - jwtAuthAccess: []
+    delete:
+      summary: удалить роль
+      tags:
+        - role_crud
+      responses:
+        '200':
+          description: 'OK'
+        '400':
+          description: 'role not found'
+        '403':
+          description: 'no permissions'
+      parameters:
+        - in: path
+          name: role_id
+          schema:
+            type: string
+          required: true
+      security:
+        - jwtAuthAccess: []
+
+  /role/user/{user_id}/role/{role_id}:
+    put:
+      summary: выдать пользователю роль
+      tags:
+        - role_crud
+      parameters:
+        - in: path
+          name: user_id
+          schema:
+            type: string
+            format: uuid
+            example: '2945adaa-15a2-43fb-81a8-514d398daf43'
+          required: true
+        - in: path
+          name: role_id
+          schema:
+            type: string
+            format: uuid
+            example: '953f172e-e0af-4c2c-8788-79a894e321f5'
+          required: true
+      responses:
+        '200':
+          description: 'role granted'
+        '404':
+          description: 'role or user not found'
+        '403':
+          description: 'no permissions'
+      security:
+        - jwtAuthAccess: []
+    delete:
+      summary: отобрать у пользователя роль
+      tags:
+        - role_crud
+      parameters:
+        - in: path
+          name: user_id
+          schema:
+            type: string
+            format: uuid
+            example: '2945adaa-15a2-43fb-81a8-514d398daf43'
+          required: true
+        - in: path
+          name: role_id
+          schema:
+            type: string
+            format: uuid
+            example: '953f172e-e0af-4c2c-8788-79a894e321f5'
+          required: true
+      responses:
+        '200':
+          description: 'role refused'
+        '404':
+          description: 'role or user not found'
+        '403':
+          description: 'no permissions'
+      security:
+        - jwtAuthAccess: []
+    get:
+      summary: проверить роль у пользователя
+      tags:
+        - role_crud
+      parameters:
+        - in: path
+          name: user_id
+          schema:
+            type: string
+            format: uuid
+            example: 'df87e631-94e0-4be2-812d-34feb0ab903e'
+          required: true
+        - in: path
+          name: role_id
+          schema:
+            type: string
+            format: uuid
+            example: '904a0f9b-0179-4855-9019-d6c8c632576f'
+          required: true
+      responses:
+        '200':
+          description: 'user have role'
+        '400':
+          description: 'user does not have role'
+        '404':
+          description: 'user or rule not found'
+      security:
+        - jwtAuthAccess: []
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: myemail@host.com
+        password:
+          type: string
+          example: '12345'
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 'f5ef6ce5-5a6a-4bd3-9d30-8749be46eebb'
+        name:
+          type: string
+          example: subscriber
+
+
+  securitySchemes:
+    jwtAuthAccess:
+      type: apiKey
+      in: cookie
+      name: JWTCOOCKIEACC
+    jwtAuthRefresh:
+      type: apiKey
+      in: cookie
+      name: JWTCOOCKIEREF
