@@ -1,0 +1,6 @@
+# Сообщения ошибок
+
+class APIErrors:
+    ROLE_OR_USER_NOT_FOUND = "USER_OR_ROLE_NOT_FOUND"
+    ROLE_ASSIGNED = "ROLE_ASSIGNED_TO_USER"
+    ROLE_EXISTS = "ROLE_EXISTS"
