@@ -1,4 +1,5 @@
 from flask import Flask
+
 from db.db import init_db, db
 from db.models import User
 from flask_jwt_extended import JWTManager
@@ -15,6 +16,7 @@ def create_app():
     app.app_context().push()
     db.create_all()
 
+
     # Here you can globally configure all the ways you want to allow JWTs to
     # be sent to your web application. By default, this will be only headers.
     app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
@@ -24,17 +26,18 @@ def create_app():
     app.config["JWT_COOKIE_SECURE"] = False
 
     # Change this in your code!
-    app.config["JWT_SECRET_KEY"] = "super-secret"
+    app.config["JWT_SECRET_KEY"] = "super-secret"    
+    
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=5000)
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(seconds=7000)
 
-    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=5)
-    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(seconds=7)
-
-    from api.v1 import user
+    from api.v1 import user, role
     app.register_blueprint(user.user)
-
+    app.register_blueprint(role.role_routes)
+    
     jwt.init_app(app)
-
+    
     return app
 
-
+  
 app = create_app()
