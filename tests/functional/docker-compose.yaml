@@ -1,0 +1,51 @@
+services:
+
+  tests:
+    build: .
+    env_file:
+      - .env
+    networks:
+      - test_net
+
+  auth-api-tests:
+    build: ../../src
+    image: auth-api-image-test
+    expose:
+      - 5000
+    env_file:
+      - .env
+    depends_on:
+      - db-tests
+    restart: on-failure
+    networks:
+      - test_net
+
+  db-tests:
+    image: postgres:14-alpine
+    expose:
+      - 5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    networks:
+      - test_net
+
+  redis-tests:
+    restart: unless-stopped
+    expose:
+      - 6379
+    image: redis:6.2.5
+    volumes:
+      - test_redis_data:/data
+    networks:
+      - test_net
+
+networks:
+    test_net:
+        name: test_net
+        driver: bridge
+
+volumes:
+  test_postgres_data:
+  test_redis_data:
