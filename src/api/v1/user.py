@@ -1,10 +1,18 @@
 from flask import Blueprint, request, Response
-from service.user_logic import register_new_user, login_user
+from service.user_logic import register_new_user, login_user, logout_user
 
-user_register = Blueprint("user_register", __name__, url_prefix="/user")
+from flask_jwt_extended import set_access_cookies
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import get_jwt
+from flask_jwt_extended import set_refresh_cookies
+from flask_jwt_extended import verify_jwt_in_request
 
 
-@user_register.route("/register", methods=["POST"])
+user = Blueprint("user", __name__, url_prefix="/user")
+
+
+@user.route("/register", methods=["POST"])
 def register():
     if request.method == "POST":
         request_data = request.get_json()
@@ -22,19 +30,51 @@ def register():
         return Response(status=200, mimetype="application/json")
 
 
-@user_register.route("/login", methods=["POST"])
+@user.route("/login", methods=["POST"])
+@jwt_required(optional=True)
 def login():
     if request.method == "POST":
         request_data = request.get_json()
 
-        username = request_data["username"]
+        username = request_data["email"]
         password = request_data["password"]
 
         if username is None or password is None:
             return Response(status=400, mimetype="application/json")
 
+        identy = get_jwt_identity()
+        if identy:
+            return Response(response="User already logged in", status=200, mimetype="application/json")
+
         result = login_user(username, password)
         if result == "AUTH_FAILED":
             return Response(status=401, mimetype="application/json")
 
-        return Response(status=200, mimetype="application/json")
+        resp = Response(status=200, mimetype="application/json")
+
+        set_access_cookies(resp, result[0])
+        set_refresh_cookies(resp, result[1])
+        return resp
+
+
+# Endpoint for revoking the current users access token. Save the JWTs unique
+# identifier (jti) in redis. Also set a Time to Live (TTL)  when storing the JWT
+# so that it will automatically be cleared out of redis after the token expires.
+@user.route("/logout", methods=["POST"])
+@jwt_required()
+def logout():
+    jti = get_jwt()["jti"]
+    # jwt_redis_blocklist.set(jti, "", ex=ACCESS_EXPIRES)
+    # return jsonify(msg="Access token revoked")
+
+
+@user.route("/refresh", methods=["POST"])
+@jwt_required()
+def refresh_token():
+    pass
+
+
+@user.route("/auth_history", methods=["GET"])
+@jwt_required()
+def get_auth_history():
+    pass

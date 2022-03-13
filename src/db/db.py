@@ -10,9 +10,13 @@ postgres_uri = f'postgresql+psycopg2://' \
                f'{settings.postgres_database_name}'
 
 db = SQLAlchemy()
-redis_db = redis.Redis(host=settings.redis_host,
-                       port=settings.redis_port,
-                       db=0)
+redis_db_acc_tok = redis.Redis(host=settings.redis_host,
+                               port=settings.redis_port,
+                               db=0)
+
+redis_db_ref_tok = redis.Redis(host=settings.redis_host,
+                               port=settings.redis_port,
+                               db=1)
 
 def init_db(app: Flask):
     app.config['SQLALCHEMY_DATABASE_URI'] = postgres_uri
