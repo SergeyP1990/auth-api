@@ -63,7 +63,10 @@ def login():
 @user.route("/logout", methods=["POST"])
 @jwt_required()
 def logout():
-    jti = get_jwt()["jti"]
+    acc_cookie = request.cookies.get("access_token_cookie")
+    ref_cookie = request.cookies.get("refresh_token_cookie")
+    result = logout_user(acc_cookie, ref_cookie)
+
     # jwt_redis_blocklist.set(jti, "", ex=ACCESS_EXPIRES)
     # return jsonify(msg="Access token revoked")
 
@@ -77,4 +80,14 @@ def refresh_token():
 @user.route("/auth_history", methods=["GET"])
 @jwt_required()
 def get_auth_history():
-    pass
+    # verify_jwt_in_request(refresh=False)
+    identy = get_jwt_identity()
+    s = ""
+    for i, j in get_jwt().items():
+        s = s + f"- {i}: {j}\n"
+    verify_jwt_in_request(refresh=True)
+    identy2 = get_jwt_identity()
+    s2 = ""
+    for i, j in get_jwt().items():
+        s2 = s2 + f"- {i}: {j}\n"
+    return Response(response=f"IDENTY: {identy}\n{s}\nIDENTY2: {identy2}\n{s2}", status=200, mimetype="application/json")
