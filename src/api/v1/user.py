@@ -1,5 +1,5 @@
 from flask import Blueprint, request, Response
-from service.user_logic import register_new_user, login_user, logout_user
+from service.user_logic import register_new_user, login_user, logout_user, refresh_access_token
 
 from flask_jwt_extended import set_access_cookies
 from flask_jwt_extended import jwt_required
@@ -7,6 +7,7 @@ from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import set_refresh_cookies
 from flask_jwt_extended import verify_jwt_in_request
+from flask_jwt_extended import unset_jwt_cookies
 
 
 user = Blueprint("user", __name__, url_prefix="/user")
@@ -67,14 +68,21 @@ def logout():
     ref_cookie = request.cookies.get("refresh_token_cookie")
     result = logout_user(acc_cookie, ref_cookie)
 
-    # jwt_redis_blocklist.set(jti, "", ex=ACCESS_EXPIRES)
-    # return jsonify(msg="Access token revoked")
+    if result == "NO_JTI_ERROR":
+        return Response(status=401, mimetype="application/json")
+
+    resp = Response(status=200, mimetype="application/json")
+    unset_jwt_cookies(resp)
+    return resp
 
 
 @user.route("/refresh", methods=["POST"])
-@jwt_required()
-def refresh_token():
-    pass
+@jwt_required(refresh=True)
+def refresh_access_token():
+    identy = get_jwt_identity()
+    jti = get_jwt()["jti"]
+    result = refresh_access_token(identy, jti)
+
 
 
 @user.route("/auth_history", methods=["GET"])

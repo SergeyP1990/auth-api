@@ -60,10 +60,30 @@ def login_user(user_login: str, password: str):
 
 
 def logout_user(jwt_access_token, jwt_refresh_token):
-    jti_access = decode_token(jwt_access_token)["jti"]
+    jti_access = decode_token(jwt_access_token).get("jti")
     print(f"==== LOGOUT FUNCTION; AFTER JTI ACCESS: {jti_access}")
-    jti_refresh = jwt_refresh_token.get("jti")
-    print(f"==== LOGOUT FUNCTION; AFTER JTI REFRESH")
+    jti_refresh = decode_token(jwt_refresh_token).get("jti")
+    print(f"==== LOGOUT FUNCTION; AFTER JTI REFRESH {jti_refresh}")
 
-    # redis_db_acc_tok.set(jti_access, jwt_access_token, ex=timedelta(seconds=5000))
-    # redis_db_ref_tok.delete(jti_refresh)
+    if jti_access is None or jti_refresh is None:
+        return "NO_JTI_ERROR"
+
+    print("==== setting redis acc token and del def token")
+    redis_db_acc_tok.set(jti_access, jwt_access_token, ex=timedelta(seconds=5000))
+    redis_db_ref_tok.delete(jti_refresh)
+    print("==== working with redis done")
+
+
+def refresh_access_token(identy, jti):
+    jti_ref_tok = redis_db_ref_tok.get(jti)
+    if jti_ref_tok is None:
+        return "REF_TOK_INVALID_ERROR"
+    redis_db_ref_tok.delete(jti)
+
+    refresh_token = create_refresh_token(identity=identy)
+    access_token = create_access_token(identity=identy)
+
+    refresh_token_id = get_jti(refresh_token)
+    redis_db_ref_tok.set(refresh_token_id, refresh_token, ex=timedelta(seconds=7000))
+
+    return access_token, refresh_token
