@@ -1,8 +1,9 @@
-from db.models import User
+from db.models import User, AuthHistory
 from db.db import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import jsonify
 from datetime import timedelta
+from functools import wraps
 
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token
@@ -11,10 +12,31 @@ from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import get_jti
 from flask_jwt_extended import decode_token
+from flask_jwt_extended import verify_jwt_in_request
+from flask_jwt_extended import get_jwt
 
 from db.db import redis_db_acc_tok, redis_db_ref_tok
 
 jwt = JWTManager()
+
+
+# Here is a custom decorator that verifies the JWT is present in the request,
+# as well as insuring that the JWT has a claim indicating that this user is
+# an administrator
+def admin_required():
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            verify_jwt_in_request()
+            claims = get_jwt()
+            if claims["is_administrator"]:
+                return fn(*args, **kwargs)
+            else:
+                return jsonify(msg="Admins only!"), 403
+
+        return decorator
+
+    return wrapper
 
 
 # Callback function to check if a JWT exists in the redis blocklist
@@ -41,11 +63,20 @@ def register_new_user(user_login: str, password: str):
     db.session.commit()
 
 
-def login_user(user_login: str, password: str):
+def login_user(user_login: str, password: str, user_agent: str, host: str):
 
     user = User.query.filter_by(email=user_login).first()
 
-    if not user or not check_password_hash(user.password, password):
+    if not user:
+        print("==== NO USER WITH THIS EMAIL")
+        return "AUTH_FAILED"
+
+    auth_record = AuthHistory(user_id=user.id, user_agent=user_agent, host=host)
+    if not check_password_hash(user.password, password):
+        print("==== WRONG PASSWORD")
+        auth_record.auth_result = "denied"
+        db.session.add(auth_record)
+        db.session.commit()
         return "AUTH_FAILED"
 
     access_token = create_access_token(identity=user_login)
@@ -54,9 +85,23 @@ def login_user(user_login: str, password: str):
     refresh_token_id = get_jti(refresh_token)
     print(f"==== REFRESH TOKEN: {refresh_token_id}")
     redis_db_ref_tok.set(refresh_token_id, refresh_token, ex=timedelta(seconds=7000))
-    # print(f"==== REDIS REFRESH TOKEN: {redis_db_ref_tok.get(refresh_token_id)}")
+
+    auth_record.auth_result = "success"
+    db.session.add(auth_record)
+    db.session.commit()
 
     return access_token, refresh_token
+
+
+def get_auth_history(user_identy):
+    user = User.query.filter_by(email=user_identy).first()
+    if not user:
+        return "NO_SUCH_USER"
+
+    user_id = user.id
+    auth_history = AuthHistory.query.filter_by(user_id=user_id).all()
+
+    return auth_history
 
 
 def logout_user(jwt_access_token, jwt_refresh_token):
@@ -87,3 +132,21 @@ def refresh_access_token(identy, jti):
     redis_db_ref_tok.set(refresh_token_id, refresh_token, ex=timedelta(seconds=7000))
 
     return access_token, refresh_token
+
+
+def update_user(user_id, username, password):
+    check_user = User.query.filter((User.email == username) & (User.id != user_id)).first()
+    if check_user:
+        print(f"==== check_user: {check_user}")
+        return "USER_EXISTS"
+
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return "USER_NOT_FOUND"
+
+    hashed_pass = generate_password_hash(password)
+
+    user.email = username
+    user.password = hashed_pass
+
+    db.session.commit()
