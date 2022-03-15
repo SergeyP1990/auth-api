@@ -146,7 +146,7 @@ def refresh_access_token(identy, jti):
 
 def update_user(user_id, username, password):
     check_user = User.query.filter((User.email == username) & (User.id != user_id)).first()
-    if check_user:
+    if check_user is not None:
         logging.debug(f"==== check_user: {check_user}")
         return "USER_EXISTS"
 
@@ -160,3 +160,19 @@ def update_user(user_id, username, password):
     user.password = hashed_pass
 
     db.session.commit()
+
+
+def get_user_id_by_email(email: str):
+    user = User.query.filter_by(email=email).first()
+    if user is None:
+        return "USER_NOT_FOUND"
+
+    return user.id
+
+
+def get_user_email_by_id(user_id: str):
+    user = User.query.filter_by(id=user_id).first()
+    if user is None:
+        return "USER_NOT_FOUND"
+
+    return user.email

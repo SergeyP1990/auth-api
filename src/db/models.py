@@ -34,7 +34,7 @@ class User(MixinIdDate):
                                    lazy='dynamic')
 
     def __repr__(self):
-        return f'<User {self.login}>'
+        return f'<User {self.email}>'
 
 
 class Role(MixinIdDate):

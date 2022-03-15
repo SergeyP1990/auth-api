@@ -1,5 +1,6 @@
 from flask import Blueprint, request, Response
-from service.user_logic import register_new_user, login_user, logout_user, refresh_access_token, update_user, get_auth_history
+from service.user_logic import register_new_user, login_user, logout_user, refresh_access_token
+from service.user_logic import update_user, get_auth_history, get_user_id_by_email
 
 from flask_jwt_extended import set_access_cookies
 from flask_jwt_extended import jwt_required
@@ -44,8 +45,11 @@ def update_login_password():
         username = request_data["email"]
         password = request_data["password"]
 
-        if username != get_jwt_identity():
-            check_user_role_by_email(username, "admin")
+        current_user_identy = get_jwt_identity()
+        current_user_id = get_user_id_by_email(current_user_identy)
+        if user_id != current_user_id:
+            if check_user_role_by_email(current_user_identy, "admin") != "OK":
+                return Response(status=403, mimetype="application/json")
 
         if username is None or password is None or user_id is None:
             return Response(status=400, mimetype="application/json")
@@ -110,7 +114,7 @@ def logout():
 
 @user.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
-def refresh_access_token():
+def refresh_tokens():
     identy = get_jwt_identity()
     jti = get_jwt()["jti"]
     result = refresh_access_token(identy, jti)
@@ -140,5 +144,3 @@ def auth_history():
     result.status = 200
     result.mimetype = "application/json"
     return result
-
-
