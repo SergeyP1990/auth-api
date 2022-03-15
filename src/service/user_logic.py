@@ -43,7 +43,6 @@ def admin_required():
 # Callback function to check if a JWT exists in the redis blocklist
 @jwt.token_in_blocklist_loader
 def check_if_token_is_revoked(jwt_header, jwt_payload):
-    logging.debug("==== CHECK IF TOKEN REVOKED FUNCTION CALL")
     if jwt_payload["type"] == "refresh":
         return False
     jti = jwt_payload["jti"]

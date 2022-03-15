@@ -8,7 +8,10 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from service.user_logic import jwt
-import logging
+import sys
+from service.user_logic import register_new_user
+from service.role_logic import assign_user_role_by_name
+from api.v1.error_messages import APIErrors
 
 
 def create_app():
@@ -43,3 +46,26 @@ def create_app():
 
   
 app = create_app()
+
+
+if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        exit(0)
+    if sys.argv[1] == "register-user":
+        if len(sys.argv) < 4:
+            print(f"Usage: {sys.argv[0]} register-user <user_name> <password>")
+            exit(0)
+        user_login = sys.argv[2]
+        user_password = sys.argv[3]
+        register_new_user(user_login, user_password)
+    if sys.argv[1] == "grant-superuser":
+        if len(sys.argv) < 3:
+            print(f"Usage: {sys.argv[0]} grant-superuser <user_name>")
+            exit(0)
+        result = assign_user_role_by_name(sys.argv[2], "superadmin")
+        if isinstance(result, APIErrors):
+            print(f"ERROR: {result}")
+            exit(1)
+        print("Role granted")
+        exit(0)
+

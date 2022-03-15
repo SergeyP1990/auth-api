@@ -9,6 +9,8 @@ from flask_jwt_extended import set_refresh_cookies
 from flask_jwt_extended import verify_jwt_in_request
 from flask_jwt_extended import unset_jwt_cookies
 
+from service.role_logic import check_user_role_by_email
+
 import logging
 
 user = Blueprint("user", __name__, url_prefix="/user")
@@ -41,6 +43,9 @@ def update_login_password():
         user_id = request_data["user_id"]
         username = request_data["email"]
         password = request_data["password"]
+
+        if username != get_jwt_identity():
+            check_user_role_by_email(username, "admin")
 
         if username is None or password is None or user_id is None:
             return Response(status=400, mimetype="application/json")
