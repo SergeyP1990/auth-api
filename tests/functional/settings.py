@@ -1,8 +1,8 @@
 import os
-from pathlib import Path
-from pydantic import BaseSettings, Field
 from dataclasses import dataclass
+
 from multidict import CIMultiDictProxy
+from pydantic import BaseSettings, Field
 
 
 @dataclass
@@ -19,7 +19,7 @@ class TestSettings(BaseSettings):
     auth_api_host: str = Field(os.getenv('AUTH_API_HOST'))
 
     dsl = {
-        'dbname': os.environ.get('POSTGRES_NAME'),
+        'dbname': os.environ.get('POSTGRES_DB'),
         'user': os.environ.get('POSTGRES_USER'),
         'password': os.environ.get('POSTGRES_PASSWORD'),
         'host': os.environ.get('POSTGRES_HOST'),
