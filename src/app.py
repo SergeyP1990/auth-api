@@ -8,6 +8,7 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from service.user_logic import jwt
+import logging
 
 
 def create_app():
@@ -15,7 +16,6 @@ def create_app():
     init_db(app)
     app.app_context().push()
     db.create_all()
-
 
     # Here you can globally configure all the ways you want to allow JWTs to
     # be sent to your web application. By default, this will be only headers.
@@ -30,6 +30,8 @@ def create_app():
     
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=5000)
     app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(seconds=7000)
+
+    app.config["JWT_REFRESH_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN-REF"
 
     from api.v1 import user, role
     app.register_blueprint(user.user)

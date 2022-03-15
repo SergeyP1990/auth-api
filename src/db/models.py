@@ -57,3 +57,5 @@ class AuthHistory(MixinIdDate):
     __tablename__ = 'auth_history'
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey("users.id"))
     user_agent = db.Column(db.String, nullable=False)
+    host = db.Column(db.String, nullable=False)
+    auth_result = db.Column(db.String, nullable=False)

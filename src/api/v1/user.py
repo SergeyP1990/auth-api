@@ -1,5 +1,5 @@
 from flask import Blueprint, request, Response
-from service.user_logic import register_new_user, login_user, logout_user
+from service.user_logic import register_new_user, login_user, logout_user, refresh_access_token, update_user, get_auth_history
 
 from flask_jwt_extended import set_access_cookies
 from flask_jwt_extended import jwt_required
@@ -7,7 +7,9 @@ from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import set_refresh_cookies
 from flask_jwt_extended import verify_jwt_in_request
+from flask_jwt_extended import unset_jwt_cookies
 
+import logging
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
@@ -30,6 +32,28 @@ def register():
         return Response(status=200, mimetype="application/json")
 
 
+@user.route("/", methods=["PUT"])
+@jwt_required()
+def update_login_password():
+    if request.method == "PUT":
+        request_data = request.get_json()
+
+        user_id = request_data["user_id"]
+        username = request_data["email"]
+        password = request_data["password"]
+
+        if username is None or password is None or user_id is None:
+            return Response(status=400, mimetype="application/json")
+
+        result = update_user(user_id, username, password)
+        if result == "USER_NOT_FOUND":
+            return Response(status=404, mimetype="application/json")
+        if result == "USER_EXISTS":
+            return Response(status=409, mimetype="application/json")
+
+        return Response(status=200, mimetype="application/json")
+
+
 @user.route("/login", methods=["POST"])
 @jwt_required(optional=True)
 def login():
@@ -39,6 +63,9 @@ def login():
         username = request_data["email"]
         password = request_data["password"]
 
+        user_agent = request.headers["User-Agent"]
+        host = request.headers["Host"]
+
         if username is None or password is None:
             return Response(status=400, mimetype="application/json")
 
@@ -46,7 +73,7 @@ def login():
         if identy:
             return Response(response="User already logged in", status=200, mimetype="application/json")
 
-        result = login_user(username, password)
+        result = login_user(username, password, user_agent, host)
         if result == "AUTH_FAILED":
             return Response(status=401, mimetype="application/json")
 
@@ -63,18 +90,50 @@ def login():
 @user.route("/logout", methods=["POST"])
 @jwt_required()
 def logout():
-    jti = get_jwt()["jti"]
-    # jwt_redis_blocklist.set(jti, "", ex=ACCESS_EXPIRES)
-    # return jsonify(msg="Access token revoked")
+    acc_cookie = request.cookies.get("access_token_cookie")
+    ref_cookie = request.cookies.get("refresh_token_cookie")
+    result = logout_user(acc_cookie, ref_cookie)
+
+    if result == "NO_JTI_ERROR":
+        return Response(status=401, mimetype="application/json")
+
+    resp = Response(status=200, mimetype="application/json")
+    unset_jwt_cookies(resp)
+
+    return resp
 
 
 @user.route("/refresh", methods=["POST"])
-@jwt_required()
-def refresh_token():
-    pass
+@jwt_required(refresh=True)
+def refresh_access_token():
+    identy = get_jwt_identity()
+    jti = get_jwt()["jti"]
+    result = refresh_access_token(identy, jti)
+
+    if result == "NO_JTI_ERROR":
+        return Response(status=401, mimetype="application/json")
+
+    resp = Response(status=200, mimetype="application/json")
+    set_access_cookies(resp, result[0])
+    set_refresh_cookies(resp, result[1])
+
+    return resp
 
 
 @user.route("/auth_history", methods=["GET"])
 @jwt_required()
-def get_auth_history():
-    pass
+def auth_history():
+    identy = get_jwt_identity()
+
+    result = get_auth_history(identy)
+
+    if result == "NO_SUCH_USER":
+        return Response(status=404, mimetype="application/json")
+
+    logging.debug(f"==== RESULT: {result}")
+
+    result.status = 200
+    result.mimetype = "application/json"
+    return result
+
+
