@@ -42,7 +42,7 @@ class User(MixinIdDate):
                                 passive_deletes=True)
 
     def __repr__(self):
-        return f'<User {self.login}>'
+        return f'<User {self.email}>'
 
 
 class Role(MixinIdDate):
