@@ -8,6 +8,7 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from service.user_logic import jwt
+import logging
 
 
 def create_app():

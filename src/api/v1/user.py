@@ -9,6 +9,7 @@ from flask_jwt_extended import set_refresh_cookies
 from flask_jwt_extended import verify_jwt_in_request
 from flask_jwt_extended import unset_jwt_cookies
 
+import logging
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
@@ -98,6 +99,7 @@ def logout():
 
     resp = Response(status=200, mimetype="application/json")
     unset_jwt_cookies(resp)
+
     return resp
 
 
@@ -128,23 +130,10 @@ def auth_history():
     if result == "NO_SUCH_USER":
         return Response(status=404, mimetype="application/json")
 
-    print(result)
-    resp = Response(status=200, mimetype="application/json")
-    resp.response = result
-    return resp
+    logging.debug(f"==== RESULT: {result}")
+
+    result.status = 200
+    result.mimetype = "application/json"
+    return result
 
 
-@user.route("/test_route", methods=["GET"])
-@jwt_required()
-def test_route():
-    # verify_jwt_in_request(refresh=False)
-    identy = get_jwt_identity()
-    s = ""
-    for i, j in get_jwt().items():
-        s = s + f"- {i}: {j}\n"
-    verify_jwt_in_request(refresh=True)
-    identy2 = get_jwt_identity()
-    s2 = ""
-    for i, j in get_jwt().items():
-        s2 = s2 + f"- {i}: {j}\n"
-    return Response(response=f"IDENTY: {identy}\n{s}\nIDENTY2: {identy2}\n{s2}", status=200, mimetype="application/json")

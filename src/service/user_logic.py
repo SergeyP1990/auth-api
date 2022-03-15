@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask import jsonify
 from datetime import timedelta
 from functools import wraps
+import logging
 
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token
@@ -42,11 +43,11 @@ def admin_required():
 # Callback function to check if a JWT exists in the redis blocklist
 @jwt.token_in_blocklist_loader
 def check_if_token_is_revoked(jwt_header, jwt_payload):
-    print("==== CHECK IF TOKEN REVOKED FUNCTION CALL")
+    logging.debug("==== CHECK IF TOKEN REVOKED FUNCTION CALL")
     if jwt_payload["type"] == "refresh":
         return False
     jti = jwt_payload["jti"]
-    print(f"==== JTI: {jti}")
+    logging.debug(f"==== CHECK FOR REVOKED JTI: {jti}")
     token_in_redis = redis_db_acc_tok.get(jti)
     return token_in_redis is not None
 
@@ -68,12 +69,12 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
     user = User.query.filter_by(email=user_login).first()
 
     if not user:
-        print("==== NO USER WITH THIS EMAIL")
+        logging.debug("==== NO USER WITH THIS EMAIL")
         return "AUTH_FAILED"
 
     auth_record = AuthHistory(user_id=user.id, user_agent=user_agent, host=host)
     if not check_password_hash(user.password, password):
-        print("==== WRONG PASSWORD")
+        logging.debug("==== WRONG PASSWORD")
         auth_record.auth_result = "denied"
         db.session.add(auth_record)
         db.session.commit()
@@ -83,7 +84,7 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
     refresh_token = create_refresh_token(identity=user_login)
 
     refresh_token_id = get_jti(refresh_token)
-    print(f"==== REFRESH TOKEN: {refresh_token_id}")
+    logging.debug(f"==== REFRESH TOKEN: {refresh_token_id}")
     redis_db_ref_tok.set(refresh_token_id, refresh_token, ex=timedelta(seconds=7000))
 
     auth_record.auth_result = "success"
@@ -101,22 +102,32 @@ def get_auth_history(user_identy):
     user_id = user.id
     auth_history = AuthHistory.query.filter_by(user_id=user_id).all()
 
-    return auth_history
+    result = []
+    for record in auth_history:
+        di = {
+            "date": record.create_at,
+            "ip_address": record.host,
+            "user_agent": record.user_agent,
+            "result": record.auth_result
+        }
+        result.append(di)
+
+    return jsonify(result)
 
 
 def logout_user(jwt_access_token, jwt_refresh_token):
     jti_access = decode_token(jwt_access_token).get("jti")
-    print(f"==== LOGOUT FUNCTION; AFTER JTI ACCESS: {jti_access}")
+    logging.debug(f"==== LOGOUT FUNCTION; AFTER JTI ACCESS: {jti_access}")
     jti_refresh = decode_token(jwt_refresh_token).get("jti")
-    print(f"==== LOGOUT FUNCTION; AFTER JTI REFRESH {jti_refresh}")
+    logging.debug(f"==== LOGOUT FUNCTION; AFTER JTI REFRESH {jti_refresh}")
 
     if jti_access is None or jti_refresh is None:
         return "NO_JTI_ERROR"
 
-    print("==== setting redis acc token and del def token")
+    logging.debug("==== setting redis acc token and del def token")
     redis_db_acc_tok.set(jti_access, jwt_access_token, ex=timedelta(seconds=5000))
     redis_db_ref_tok.delete(jti_refresh)
-    print("==== working with redis done")
+    logging.debug("==== working with redis done")
 
 
 def refresh_access_token(identy, jti):
@@ -137,7 +148,7 @@ def refresh_access_token(identy, jti):
 def update_user(user_id, username, password):
     check_user = User.query.filter((User.email == username) & (User.id != user_id)).first()
     if check_user:
-        print(f"==== check_user: {check_user}")
+        logging.debug(f"==== check_user: {check_user}")
         return "USER_EXISTS"
 
     user = User.query.filter_by(id=user_id).first()
