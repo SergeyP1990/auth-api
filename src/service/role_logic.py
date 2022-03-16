@@ -1,5 +1,8 @@
 import logging
 
+import click
+from flask.cli import with_appcontext
+
 from api.v1.error_messages import APIErrors
 from db.db import db
 from db.models import Role, User, UserRole
@@ -86,6 +89,17 @@ def assign_user_role_by_name(user_name: str, role_name: str):
         return APIErrors.ROLE_NOT_FOUND
 
     return assign_user_role(user.id, role.id)
+
+
+@click.command()
+@click.argument("user_name")
+@with_appcontext
+def assign_superuser(user_name: str):
+    result = assign_user_role_by_name(user_name, "superadmin")
+    if result is not None:
+        click.echo(f"ERR: {result}")
+        return
+    click.echo("DONE")
 
 
 def check_user_role(user_id: str, role_id: str):

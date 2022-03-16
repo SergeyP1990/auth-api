@@ -1,7 +1,9 @@
 import logging
 from datetime import timedelta
 from functools import wraps
+import click
 
+from flask.cli import with_appcontext
 from flask import jsonify
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
@@ -50,16 +52,22 @@ def check_if_token_is_revoked(jwt_header, jwt_payload):
     return token_in_redis is not None
 
 
+@click.command()
+@click.argument("user_login")
+@click.argument("password")
+@with_appcontext
 def register_new_user(user_login: str, password: str):
 
     user = User.query.filter_by(email=user_login).first()
     if user:
+        click.echo("ERR: USER EXISTS")
         return "USER_EXISTS"
     hashed_pass = generate_password_hash(password)
     new_user = User(email=user_login, password=hashed_pass)
 
     db.session.add(new_user)
     db.session.commit()
+    click.echo("DONE")
 
 
 def login_user(user_login: str, password: str, user_agent: str, host: str):
