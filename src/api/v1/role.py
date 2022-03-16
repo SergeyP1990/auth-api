@@ -1,7 +1,8 @@
-import service.role_logic as service_role
-from api.v1.error_messages import APIErrors
 from flask import Blueprint, request, Response, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+
+import service.role_logic as service_role
+from api.v1.error_messages import APIErrors
 
 role_routes = Blueprint("role_routes", __name__, url_prefix="/role")
 

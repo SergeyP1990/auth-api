@@ -1,13 +1,13 @@
+import sys
+from datetime import timedelta
+
 from flask import Flask
 
-from db.db import init_db, db
-
-from datetime import timedelta
-from service.user_logic import jwt
-import sys
-from service.user_logic import register_new_user
-from service.role_logic import assign_user_role_by_name, add_role
 from core.config import settings
+from db.db import init_db, db
+from service.role_logic import assign_user_role_by_name, add_role
+from service.user_logic import jwt
+from service.user_logic import register_new_user
 
 
 def create_app():

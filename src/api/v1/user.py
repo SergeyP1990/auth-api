@@ -1,23 +1,16 @@
-from flask import Blueprint, request, Response
-from service.user_logic import (
-    register_new_user,
-    login_user,
-    logout_user,
-    refresh_access_token,
-)
-from service.user_logic import update_user, get_auth_history, get_user_id_by_email
+import logging
 
-from flask_jwt_extended import set_access_cookies
-from flask_jwt_extended import jwt_required
-from flask_jwt_extended import get_jwt_identity
+from flask import Blueprint, request, Response
 from flask_jwt_extended import get_jwt
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import set_access_cookies
 from flask_jwt_extended import set_refresh_cookies
-from flask_jwt_extended import verify_jwt_in_request
 from flask_jwt_extended import unset_jwt_cookies
 
 from service.role_logic import check_user_role_by_email
-
-import logging
+from service.user_logic import register_new_user, login_user, logout_user, refresh_access_token, update_user, \
+    get_auth_history, get_user_id_by_email
 
 user = Blueprint("user", __name__, url_prefix="/user")
 

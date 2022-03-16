@@ -1,23 +1,21 @@
-from db.models import User, AuthHistory
-from db.db import db
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask import jsonify
+import logging
 from datetime import timedelta
 from functools import wraps
-import logging
 
+from flask import jsonify
+from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token
-from flask_jwt_extended import get_jwt_identity
-from flask_jwt_extended import jwt_required
-from flask_jwt_extended import JWTManager
-from flask_jwt_extended import get_jti
 from flask_jwt_extended import decode_token
-from flask_jwt_extended import verify_jwt_in_request
+from flask_jwt_extended import get_jti
 from flask_jwt_extended import get_jwt
+from flask_jwt_extended import verify_jwt_in_request
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from db.db import redis_db_acc_tok, redis_db_ref_tok
 from core.config import settings
+from db.db import db
+from db.db import redis_db_acc_tok, redis_db_ref_tok
+from db.models import User, AuthHistory
 
 jwt = JWTManager()
 

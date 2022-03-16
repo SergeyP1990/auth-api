@@ -1,7 +1,8 @@
 import redis
-from core.config import settings
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+
+from core.config import settings
 
 postgres_uri = (
     f"postgresql+psycopg2://"
