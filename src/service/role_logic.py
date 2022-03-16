@@ -51,7 +51,7 @@ def delete_role(role_id: str):
     if role_to_delete is None:
         return APIErrors.ROLE_NOT_FOUND
 
-    role_to_delete.delete()
+    db.session.delete(role_to_delete)
     db.session.commit()
 
 

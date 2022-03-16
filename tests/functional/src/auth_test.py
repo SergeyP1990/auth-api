@@ -9,7 +9,7 @@ sys.path.append('/usr/src/tests/')
 from settings import test_settings
 
 
-def test_login_fail(truncate_table):
+def test_login_fail(truncate_tables):
     body = json.dumps({"email": "user1@mail.com", "password": "P@ssw0rd"})
     headers = {'Content-Type': 'application/json'}
     res = requests.post(
