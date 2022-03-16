@@ -1,10 +1,10 @@
 import logging
 from datetime import timedelta
 from functools import wraps
-import click
 
-from flask.cli import with_appcontext
+import click
 from flask import jsonify
+from flask.cli import with_appcontext
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token

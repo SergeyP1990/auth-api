@@ -1,4 +1,5 @@
 import logging
+from http import HTTPStatus
 
 from flask import Blueprint, request, Response
 from flask_jwt_extended import get_jwt
@@ -24,13 +25,13 @@ def register():
         password = request_data["password"]
 
         if username is None or password is None:
-            return Response(status=400, mimetype="application/json")
+            return Response(status=HTTPStatus.BAD_REQUEST, mimetype="application/json")
 
         result = register_new_user(username, password)
         if result == "USER_EXISTS":
-            return Response(status=409, mimetype="application/json")
+            return Response(status=HTTPStatus.CONFLICT, mimetype="application/json")
 
-        return Response(status=200, mimetype="application/json")
+        return Response(status=HTTPStatus.OK, mimetype="application/json")
 
 
 @user.route("/", methods=["PUT"])
@@ -47,18 +48,18 @@ def update_login_password():
         current_user_id = get_user_id_by_email(current_user_identy)
         if user_id != current_user_id:
             if check_user_role_by_email(current_user_identy, "admin") != "OK":
-                return Response(status=403, mimetype="application/json")
+                return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
 
         if username is None or password is None or user_id is None:
-            return Response(status=400, mimetype="application/json")
+            return Response(status=HTTPStatus.BAD_REQUEST, mimetype="application/json")
 
         result = update_user(user_id, username, password)
         if result == "USER_NOT_FOUND":
-            return Response(status=404, mimetype="application/json")
+            return Response(status=HTTPStatus.NOT_FOUND, mimetype="application/json")
         if result == "USER_EXISTS":
-            return Response(status=409, mimetype="application/json")
+            return Response(status=HTTPStatus.CONFLICT, mimetype="application/json")
 
-        return Response(status=200, mimetype="application/json")
+        return Response(status=HTTPStatus.OK, mimetype="application/json")
 
 
 @user.route("/login", methods=["POST"])
@@ -74,21 +75,21 @@ def login():
         host = request.headers["Host"]
 
         if username is None or password is None:
-            return Response(status=400, mimetype="application/json")
+            return Response(status=HTTPStatus.BAD_REQUEST, mimetype="application/json")
 
         identy = get_jwt_identity()
         if identy:
             return Response(
                 response="User already logged in",
-                status=200,
+                status=HTTPStatus.OK,
                 mimetype="application/json",
             )
 
         result = login_user(username, password, user_agent, host)
         if result == "AUTH_FAILED":
-            return Response(status=401, mimetype="application/json")
+            return Response(status=HTTPStatus.UNAUTHORIZED, mimetype="application/json")
 
-        resp = Response(status=200, mimetype="application/json")
+        resp = Response(status=HTTPStatus.OK, mimetype="application/json")
 
         set_access_cookies(resp, result[0])
         set_refresh_cookies(resp, result[1])
@@ -106,9 +107,9 @@ def logout():
     result = logout_user(acc_cookie, ref_cookie)
 
     if result == "NO_JTI_ERROR":
-        return Response(status=401, mimetype="application/json")
+        return Response(status=HTTPStatus.UNAUTHORIZED, mimetype="application/json")
 
-    resp = Response(status=200, mimetype="application/json")
+    resp = Response(status=HTTPStatus.OK, mimetype="application/json")
     unset_jwt_cookies(resp)
 
     return resp
@@ -122,9 +123,9 @@ def refresh_tokens():
     result = refresh_access_token(identy, jti)
 
     if result == "NO_JTI_ERROR":
-        return Response(status=401, mimetype="application/json")
+        return Response(status=HTTPStatus.UNAUTHORIZED, mimetype="application/json")
 
-    resp = Response(status=200, mimetype="application/json")
+    resp = Response(status=HTTPStatus.OK, mimetype="application/json")
     set_access_cookies(resp, result[0])
     set_refresh_cookies(resp, result[1])
 
@@ -139,10 +140,10 @@ def auth_history():
     result = get_auth_history(identy)
 
     if result == "NO_SUCH_USER":
-        return Response(status=404, mimetype="application/json")
+        return Response(status=HTTPStatus.NOT_FOUND, mimetype="application/json")
 
     logging.debug(f"==== RESULT: {result}")
 
-    result.status = 200
+    result.status = HTTPStatus.OK
     result.mimetype = "application/json"
     return result
