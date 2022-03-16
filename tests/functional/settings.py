@@ -13,17 +13,17 @@ class HTTPResponse:
 
 
 class TestSettings(BaseSettings):
-    redis_host: str = Field(os.getenv('REDIS_HOST'))
-    redis_port: str = Field(os.getenv('REDIS_PORT'))
+    redis_host: str = Field(os.getenv("REDIS_HOST"))
+    redis_port: str = Field(os.getenv("REDIS_PORT"))
 
-    auth_api_host: str = Field(os.getenv('AUTH_API_HOST'))
+    auth_api_host: str = Field(os.getenv("AUTH_API_HOST"))
 
     dsl = {
-        'dbname': os.environ.get('POSTGRES_DB'),
-        'user': os.environ.get('POSTGRES_USER'),
-        'password': os.environ.get('POSTGRES_PASSWORD'),
-        'host': os.environ.get('POSTGRES_HOST'),
-        'port': os.environ.get('POSTGRES_PORT'),
+        "dbname": os.environ.get("POSTGRES_DB"),
+        "user": os.environ.get("POSTGRES_USER"),
+        "password": os.environ.get("POSTGRES_PASSWORD"),
+        "host": os.environ.get("POSTGRES_HOST"),
+        "port": os.environ.get("POSTGRES_PORT"),
     }
 
 

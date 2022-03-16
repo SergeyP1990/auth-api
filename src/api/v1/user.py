@@ -1,5 +1,10 @@
 from flask import Blueprint, request, Response
-from service.user_logic import register_new_user, login_user, logout_user, refresh_access_token
+from service.user_logic import (
+    register_new_user,
+    login_user,
+    logout_user,
+    refresh_access_token,
+)
 from service.user_logic import update_user, get_auth_history, get_user_id_by_email
 
 from flask_jwt_extended import set_access_cookies
@@ -80,7 +85,11 @@ def login():
 
         identy = get_jwt_identity()
         if identy:
-            return Response(response="User already logged in", status=200, mimetype="application/json")
+            return Response(
+                response="User already logged in",
+                status=200,
+                mimetype="application/json",
+            )
 
         result = login_user(username, password, user_agent, host)
         if result == "AUTH_FAILED":

@@ -1,5 +1,6 @@
 # Сообщения ошибок
 
+
 class APIErrors:
     ROLE_OR_USER_NOT_FOUND = "USER_OR_ROLE_NOT_FOUND"
     USER_NOT_FOUND = "USER_NOT_FOUND"

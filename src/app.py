@@ -25,23 +25,28 @@ def create_app():
     app.config["JWT_COOKIE_SECURE"] = False
 
     app.config["JWT_SECRET_KEY"] = settings.secret
-    
-    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=settings.access_token_filetime)
-    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(minutes=settings.refresh_token_filetime)
+
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(
+        minutes=settings.access_token_filetime
+    )
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(
+        minutes=settings.refresh_token_filetime
+    )
 
     app.config["JWT_REFRESH_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN-REF"
 
     from api.v1 import user, role
+
     app.register_blueprint(user.user)
     app.register_blueprint(role.role_routes)
-    
+
     jwt.init_app(app)
 
     add_role("superadmin")
 
     return app
 
-  
+
 app = create_app()
 
 

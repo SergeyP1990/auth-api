@@ -85,7 +85,11 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
 
     refresh_token_id = get_jti(refresh_token)
     logging.debug(f"==== REFRESH TOKEN: {refresh_token_id}")
-    redis_db_ref_tok.set(refresh_token_id, refresh_token, ex=timedelta(minutes=settings.refresh_token_filetime))
+    redis_db_ref_tok.set(
+        refresh_token_id,
+        refresh_token,
+        ex=timedelta(minutes=settings.refresh_token_filetime),
+    )
 
     auth_record.auth_result = "success"
     db.session.add(auth_record)
@@ -108,7 +112,7 @@ def get_auth_history(user_identy):
             "date": record.create_at,
             "ip_address": record.host,
             "user_agent": record.user_agent,
-            "result": record.auth_result
+            "result": record.auth_result,
         }
         result.append(di)
 
@@ -125,7 +129,11 @@ def logout_user(jwt_access_token, jwt_refresh_token):
         return "NO_JTI_ERROR"
 
     logging.debug("==== setting redis acc token and del ref token")
-    redis_db_acc_tok.set(jti_access, jwt_access_token, ex=timedelta(minutes=settings.access_token_filetime))
+    redis_db_acc_tok.set(
+        jti_access,
+        jwt_access_token,
+        ex=timedelta(minutes=settings.access_token_filetime),
+    )
     redis_db_ref_tok.delete(jti_refresh)
     logging.debug("==== working with redis done")
 
@@ -140,13 +148,19 @@ def refresh_access_token(identy, jti):
     access_token = create_access_token(identity=identy)
 
     refresh_token_id = get_jti(refresh_token)
-    redis_db_ref_tok.set(refresh_token_id, refresh_token, ex=timedelta(minutes=settings.refresh_token_filetime))
+    redis_db_ref_tok.set(
+        refresh_token_id,
+        refresh_token,
+        ex=timedelta(minutes=settings.refresh_token_filetime),
+    )
 
     return access_token, refresh_token
 
 
 def update_user(user_id, username, password):
-    check_user = User.query.filter((User.email == username) & (User.id != user_id)).first()
+    check_user = User.query.filter(
+        (User.email == username) & (User.id != user_id)
+    ).first()
     if check_user is not None:
         logging.debug(f"==== check_user: {check_user}")
         return "USER_EXISTS"

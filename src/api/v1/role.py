@@ -59,18 +59,14 @@ def role_crud(role_id):
         return role
 
 
-@role_routes.route("/user/<user_id>/role/<role_id>",
-                   methods=["PUT", "DELETE"])
+@role_routes.route("/user/<user_id>/role/<role_id>", methods=["PUT", "DELETE"])
 @jwt_required()
 def user_role_crud(user_id, role_id):
     identy = get_jwt_identity()
     if service_role.check_user_role_by_email(identy, "admin") != "OK":
         return Response(status=403, mimetype="application/json")
     if request.method == "PUT":
-        assign = service_role.assign_user_role(
-            user_id=user_id,
-            role_id=role_id
-        )
+        assign = service_role.assign_user_role(user_id=user_id, role_id=role_id)
         if assign == APIErrors.ROLE_ASSIGNED:
             return Response(status=409, mimetype="application/json")
         if assign == APIErrors.ROLE_OR_USER_NOT_FOUND:
@@ -78,27 +74,22 @@ def user_role_crud(user_id, role_id):
         return Response(status=200, mimetype="application/json")
 
     if request.method == "DELETE":
-        assign = service_role.delete_user_role(
-            user_id=user_id,
-            role_id=role_id
-        )
+        assign = service_role.delete_user_role(user_id=user_id, role_id=role_id)
         if assign == APIErrors.ROLE_OR_USER_NOT_FOUND:
             return Response(status=404, mimetype="application/json")
         return Response(status=200, mimetype="application/json")
 
 
-@role_routes.route("/user/<user_id>/role/<role_id>",
-                   methods=["GET"])
+@role_routes.route("/user/<user_id>/role/<role_id>", methods=["GET"])
 @jwt_required()
 def user_role_get(user_id, role_id):
     identy = get_jwt_identity()
-    if service_role.check_user_role_by_email(identy, "role_checker") != "OK"\
-            and service_role.check_user_role_by_email(identy, "admin") != "OK":
+    if (
+        service_role.check_user_role_by_email(identy, "role_checker") != "OK"
+        and service_role.check_user_role_by_email(identy, "admin") != "OK"
+    ):
         return Response(status=403, mimetype="application/json")
-    check = service_role.check_user_role(
-        user_id=user_id,
-        role_id=role_id
-    )
+    check = service_role.check_user_role(user_id=user_id, role_id=role_id)
     if check == APIErrors.ROLE_OR_USER_NOT_FOUND:
         return Response(status=404, mimetype="application/json")
     if check == APIErrors.USER_DOESNT_HAVE_ROLE:

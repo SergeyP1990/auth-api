@@ -16,21 +16,26 @@ def add_role(role_name: str):
 
 def list_role():
     query = Role.query.all()
-    role_list = [{"id": role.id,
-                  "name": role.name,
-                  "create_at": role.create_at,
-                  "update_at": role.update_at
-                  } for role in query]
+    role_list = [
+        {
+            "id": role.id,
+            "name": role.name,
+            "create_at": role.create_at,
+            "update_at": role.update_at,
+        }
+        for role in query
+    ]
     return role_list
 
 
 def role_by_id(role_id: str):
     query = Role.query.filter_by(id=role_id).first()
-    role = {"id": query.id,
-            "name": query.name,
-            "create_at": query.create_at,
-            "update_at": query.update_at
-            }
+    role = {
+        "id": query.id,
+        "name": query.name,
+        "create_at": query.create_at,
+        "update_at": query.update_at,
+    }
     return role
 
 
