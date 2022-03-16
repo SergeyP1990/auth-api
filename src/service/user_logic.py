@@ -17,6 +17,7 @@ from flask_jwt_extended import verify_jwt_in_request
 from flask_jwt_extended import get_jwt
 
 from db.db import redis_db_acc_tok, redis_db_ref_tok
+from core.config import settings
 
 jwt = JWTManager()
 
@@ -84,7 +85,7 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
 
     refresh_token_id = get_jti(refresh_token)
     logging.debug(f"==== REFRESH TOKEN: {refresh_token_id}")
-    redis_db_ref_tok.set(refresh_token_id, refresh_token, ex=timedelta(seconds=7000))
+    redis_db_ref_tok.set(refresh_token_id, refresh_token, ex=timedelta(minutes=settings.refresh_token_filetime))
 
     auth_record.auth_result = "success"
     db.session.add(auth_record)
@@ -123,8 +124,8 @@ def logout_user(jwt_access_token, jwt_refresh_token):
     if jti_access is None or jti_refresh is None:
         return "NO_JTI_ERROR"
 
-    logging.debug("==== setting redis acc token and del def token")
-    redis_db_acc_tok.set(jti_access, jwt_access_token, ex=timedelta(seconds=5000))
+    logging.debug("==== setting redis acc token and del ref token")
+    redis_db_acc_tok.set(jti_access, jwt_access_token, ex=timedelta(minutes=settings.access_token_filetime))
     redis_db_ref_tok.delete(jti_refresh)
     logging.debug("==== working with redis done")
 
@@ -139,7 +140,7 @@ def refresh_access_token(identy, jti):
     access_token = create_access_token(identity=identy)
 
     refresh_token_id = get_jti(refresh_token)
-    redis_db_ref_tok.set(refresh_token_id, refresh_token, ex=timedelta(seconds=7000))
+    redis_db_ref_tok.set(refresh_token_id, refresh_token, ex=timedelta(minutes=settings.refresh_token_filetime))
 
     return access_token, refresh_token
 

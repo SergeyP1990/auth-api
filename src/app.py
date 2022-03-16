@@ -7,6 +7,7 @@ from service.user_logic import jwt
 import sys
 from service.user_logic import register_new_user
 from service.role_logic import assign_user_role_by_name, add_role
+from core.config import settings
 
 
 def create_app():
@@ -23,11 +24,10 @@ def create_app():
     # over https. In production, this should always be set to True
     app.config["JWT_COOKIE_SECURE"] = False
 
-    # Change this in your code!
-    app.config["JWT_SECRET_KEY"] = "super-secret"    
+    app.config["JWT_SECRET_KEY"] = settings.secret
     
-    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(seconds=5000)
-    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(seconds=7000)
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=settings.access_token_filetime)
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(minutes=settings.refresh_token_filetime)
 
     app.config["JWT_REFRESH_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN-REF"
 

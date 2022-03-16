@@ -11,5 +11,10 @@ class Settings(BaseSettings):
     redis_host: str = Field(os.getenv('REDIS_HOST'))
     redis_port: str = Field(os.getenv('REDIS_PORT'))
 
+    secret: str = Field(os.getenv('SECRET_KEY'))
+
+    access_token_filetime: int = Field(os.getenv('ACCESS_TOKEN_LIFETIME'))
+    refresh_token_filetime: int = Field(os.getenv('REFRESH_TOKEN_LIFETIME'))
+
 
 settings = Settings()
