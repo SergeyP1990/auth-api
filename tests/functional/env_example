@@ -1,0 +1,9 @@
+POSTGRES_HOST=db-tests
+POSTGRES_USER=
+POSTGRES_PASSWORD=
+POSTGRES_DB=users_database
+
+REDIS_HOST=redis-tests
+REDIS_PORT=6379
+
+AUTH_API_HOST=http://auth-api-tests:5000
