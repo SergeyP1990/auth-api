@@ -14,7 +14,13 @@
   cd auth-api
   docker-compose up -d --build
   ```
- 
+ 4) Выполнить первоначальные миграции. Для этого выполнить команды:
+  ```
+  docker-compose exec auth-api flask db migrate -m "initial"
+  docker-compose exec auth-api flask db upgrade
+  ```
+
+
 ### Описание:
 
 Ознакомиться с описанием openapi можно по [ссылке](https://github.com/SergeyP1990/auth-api/blob/0450aaac4cc5b8c31cd706469ae70ca50311b67b/open_api_spec.yml) ([SwaggerHub](https://app.swaggerhub.com/apis/myteam8896/auth-api/1.0.0))
