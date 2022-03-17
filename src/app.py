@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from flask import Flask
+from flask_migrate import Migrate
 
 from core.config import settings
 from db.db import init_db, db
@@ -12,8 +13,8 @@ from service.user_logic import register_new_user
 def create_app():
     app = Flask(__name__)
     init_db(app)
+    migrate = Migrate(app, db)
     app.app_context().push()
-    db.create_all()
 
     # Here you can globally configure all the ways you want to allow JWTs to
     # be sent to your web application. By default, this will be only headers.

@@ -15,4 +15,4 @@ uvloop==0.14.0
 httptools==0.3.0
 Werkzeug==2.0.3
 Flask-JWT-Extended==4.3.1
-
+Flask-Migrate==3.1.0
