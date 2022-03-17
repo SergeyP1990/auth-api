@@ -12,6 +12,8 @@ from flask_jwt_extended import unset_jwt_cookies
 from service.role_logic import check_user_role_by_email
 from service.user_logic import register_new_user, login_user, logout_user, refresh_access_token, update_user, \
     get_auth_history, get_user_id_by_email
+from api.v1.error_messages import APISuccess, APIErrors
+
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
@@ -28,10 +30,8 @@ def register():
             return Response(status=HTTPStatus.BAD_REQUEST, mimetype="application/json")
 
         result = register_new_user(username, password)
-        if result == "USER_EXISTS":
-            return Response(status=HTTPStatus.CONFLICT, mimetype="application/json")
 
-        return Response(status=HTTPStatus.OK, mimetype="application/json")
+        return Response(response=result.description, status=result.http_status, mimetype="application/json")
 
 
 @user.route("/", methods=["PUT"])
@@ -46,18 +46,18 @@ def update_login_password():
 
         current_user_identy = get_jwt_identity()
         current_user_id = get_user_id_by_email(current_user_identy)
+        if isinstance(current_user_id, APIErrors):
+            return Response(status=current_user_id.http_status, mimetype="application/json")
         if user_id != current_user_id:
-            if check_user_role_by_email(current_user_identy, "admin") != "OK":
+            if check_user_role_by_email(current_user_identy, "admin") != APISuccess.OK:
                 return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
 
         if username is None or password is None or user_id is None:
             return Response(status=HTTPStatus.BAD_REQUEST, mimetype="application/json")
 
         result = update_user(user_id, username, password)
-        if result == "USER_NOT_FOUND":
-            return Response(status=HTTPStatus.NOT_FOUND, mimetype="application/json")
-        if result == "USER_EXISTS":
-            return Response(status=HTTPStatus.CONFLICT, mimetype="application/json")
+        if isinstance(result, APIErrors):
+            return Response(status=result.http_status, mimetype="application/json")
 
         return Response(status=HTTPStatus.OK, mimetype="application/json")
 
@@ -80,14 +80,14 @@ def login():
         identy = get_jwt_identity()
         if identy:
             return Response(
-                response="User already logged in",
-                status=HTTPStatus.OK,
+                response=APISuccess.USER_ALREADY_LOGGED_IN.description,
+                status=APISuccess.USER_ALREADY_LOGGED_IN.http_status,
                 mimetype="application/json",
             )
 
         result = login_user(username, password, user_agent, host)
-        if result == "AUTH_FAILED":
-            return Response(status=HTTPStatus.UNAUTHORIZED, mimetype="application/json")
+        if isinstance(result, APIErrors):
+            return Response(status=result.http_status, mimetype="application/json")
 
         resp = Response(status=HTTPStatus.OK, mimetype="application/json")
 
@@ -106,8 +106,8 @@ def logout():
     ref_cookie = request.cookies.get("refresh_token_cookie")
     result = logout_user(acc_cookie, ref_cookie)
 
-    if result == "NO_JTI_ERROR":
-        return Response(status=HTTPStatus.UNAUTHORIZED, mimetype="application/json")
+    if isinstance(result, APIErrors):
+        return Response(status=result.http_status, mimetype="application/json")
 
     resp = Response(status=HTTPStatus.OK, mimetype="application/json")
     unset_jwt_cookies(resp)
@@ -122,8 +122,8 @@ def refresh_tokens():
     jti = get_jwt()["jti"]
     result = refresh_access_token(identy, jti)
 
-    if result == "NO_JTI_ERROR":
-        return Response(status=HTTPStatus.UNAUTHORIZED, mimetype="application/json")
+    if isinstance(result, APIErrors):
+        return Response(status=result.http_status, mimetype="application/json")
 
     resp = Response(status=HTTPStatus.OK, mimetype="application/json")
     set_access_cookies(resp, result[0])
@@ -139,8 +139,8 @@ def auth_history(page=1):
     identy = get_jwt_identity()
     result = get_auth_history(identy, page)
 
-    if result == "NO_SUCH_USER":
-        return Response(status=HTTPStatus.NOT_FOUND, mimetype="application/json")
+    if isinstance(result, APIErrors):
+        return Response(status=result.http_status, mimetype="application/json")
 
     logging.debug(f"==== RESULT: {result}")
 
