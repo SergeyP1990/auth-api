@@ -4,17 +4,18 @@ from flask import Blueprint, request, Response, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 import service.role_logic as service_role
+from service.user_logic import required_role
 from api.v1.error_messages import APIErrors, APISuccess
 
 role_routes = Blueprint("role_routes", __name__, url_prefix="/role")
 
 
 @role_routes.route("/", methods=["GET", "POST"])
-@jwt_required()
+@required_role("admin")
 def role():
-    identy = get_jwt_identity()
-    if service_role.check_user_role_by_email(identy, "admin") != APISuccess.OK:
-        return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
+    # identy = get_jwt_identity()
+    # if service_role.check_user_role_by_email(identy, "admin") != APISuccess.OK:
+    #     return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
     if request.method == "POST":
         request_data = request.get_json()
         role_name = request_data["name"]
@@ -31,11 +32,11 @@ def role():
 
 
 @role_routes.route("/<role_id>", methods=["GET", "PUT", "DELETE"])
-@jwt_required()
+@required_role("admin")
 def role_crud(role_id):
-    identy = get_jwt_identity()
-    if service_role.check_user_role_by_email(identy, "admin") != APISuccess.OK:
-        return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
+    # identy = get_jwt_identity()
+    # if service_role.check_user_role_by_email(identy, "admin") != APISuccess.OK:
+    #     return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
     if request.method == "PUT":
         request_data = request.get_json()
         role_name = request_data["name"]
@@ -54,11 +55,11 @@ def role_crud(role_id):
 
 
 @role_routes.route("/user/<user_id>/role/<role_id>", methods=["PUT", "DELETE"])
-@jwt_required()
+@required_role("admin")
 def user_role_crud(user_id, role_id):
-    identy = get_jwt_identity()
-    if service_role.check_user_role_by_email(identy, "admin") != APISuccess.OK:
-        return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
+    # identy = get_jwt_identity()
+    # if service_role.check_user_role_by_email(identy, "admin") != APISuccess.OK:
+    #     return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
 
     if request.method == "PUT":
         assign = service_role.assign_user_role(user_id=user_id, role_id=role_id)
@@ -70,7 +71,7 @@ def user_role_crud(user_id, role_id):
 
 
 @role_routes.route("/user/<user_id>/role/<role_id>", methods=["GET"])
-@jwt_required()
+@required_role("admin", "role_checker")
 def user_role_get(user_id, role_id):
     identy = get_jwt_identity()
     if (

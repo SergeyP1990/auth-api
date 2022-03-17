@@ -107,6 +107,7 @@ def assign_user_role_by_name(user_name: str, role_name: str):
 @click.argument("user_name")
 @with_appcontext
 def assign_superuser(user_name: str):
+    add_role("superadmin")
     result = assign_user_role_by_name(user_name, "superadmin")
     if isinstance(result, APIErrors):
         click.echo(f"ERROR: {result.phrase}: {result.description}")
@@ -138,12 +139,6 @@ def check_user_role_by_email(email: str, role_name: str):
     if user is None:
         logging.debug("check_user_role_by_email: user not found")
         return APIErrors.ROLE_OR_USER_NOT_FOUND
-
-    superadmin_role = Role.query.filter_by(name="superadmin").first()
-    if superadmin_role is not None:
-        is_superadmin = check_user_role(user.id, superadmin_role.id)
-        if is_superadmin == APISuccess.OK:
-            return APISuccess.OK
 
     if role is None:
         logging.debug("check_user_role_by_email: role not found")

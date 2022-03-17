@@ -22,6 +22,8 @@ class APIErrors(APIBaseEnum):
     AUTH_FAILED = 4011, "AUTH_FAILED", HTTPStatus.UNAUTHORIZED, "Unauthorized"
     NO_JTI_ERROR = 4012, "NO_JTI_ERROR", HTTPStatus.UNAUTHORIZED, "Unauthorized"
 
+    FORBIDDEN = 4031, "FORBIDDEN", HTTPStatus.FORBIDDEN, "Forbidden"
+
     ROLE_OR_USER_NOT_FOUND = 4041, "USER_OR_ROLE_NOT_FOUND", HTTPStatus.NOT_FOUND, "User or role not found"
     USER_NOT_FOUND = 4042, "USER_NOT_FOUND", HTTPStatus.NOT_FOUND, "User not found"
     ROLE_NOT_FOUND = 4043, "ROLE_NOT_FOUND", HTTPStatus.NOT_FOUND, "Role not fount"
