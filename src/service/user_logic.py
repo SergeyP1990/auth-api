@@ -18,6 +18,7 @@ from core.config import settings
 from db.db import db
 from db.db import redis_db_acc_tok, redis_db_ref_tok
 from db.models import User, AuthHistory
+from api.v1.error_messages import APISuccess, APIErrors
 
 jwt = JWTManager()
 
@@ -52,22 +53,32 @@ def check_if_token_is_revoked(jwt_header, jwt_payload):
     return token_in_redis is not None
 
 
-@click.command()
-@click.argument("user_login")
-@click.argument("password")
-@with_appcontext
 def register_new_user(user_login: str, password: str):
 
     user = User.query.filter_by(email=user_login).first()
     if user:
-        click.echo("ERR: USER EXISTS")
-        return "USER_EXISTS"
+        return APIErrors.USER_EXISTS
     hashed_pass = generate_password_hash(password)
     new_user = User(email=user_login, password=hashed_pass)
 
     db.session.add(new_user)
     db.session.commit()
-    click.echo("DONE")
+    return APISuccess.OK
+
+
+@click.command()
+@click.argument("user_login")
+@click.argument("password")
+@with_appcontext
+def register_new_user_cli(user_login: str, password: str):
+
+    result = register_new_user(user_login, password)
+    if isinstance(result, APIErrors):
+        click.echo(f"ERROR: {result.phrase}: {result.description}")
+        raise click.Abort
+    if isinstance(result, APISuccess):
+        click.echo("DONE")
+        return
 
 
 def login_user(user_login: str, password: str, user_agent: str, host: str):
@@ -76,7 +87,7 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
 
     if not user:
         logging.debug("==== NO USER WITH THIS EMAIL")
-        return "AUTH_FAILED"
+        return APIErrors.AUTH_FAILED
 
     auth_record = AuthHistory(user_id=user.id, user_agent=user_agent, host=host)
     if not check_password_hash(user.password, password):
@@ -84,7 +95,7 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
         auth_record.auth_result = "denied"
         db.session.add(auth_record)
         db.session.commit()
-        return "AUTH_FAILED"
+        return APIErrors.AUTH_FAILED
 
     access_token = create_access_token(identity=user_login)
     refresh_token = create_refresh_token(identity=user_login)
@@ -107,7 +118,7 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
 def get_auth_history(user_identy):
     user = User.query.filter_by(email=user_identy).first()
     if not user:
-        return "NO_SUCH_USER"
+        return APIErrors.USER_NOT_FOUND
 
     user_id = user.id
     auth_history = AuthHistory.query.filter_by(user_id=user_id).all()
@@ -132,7 +143,7 @@ def logout_user(jwt_access_token, jwt_refresh_token):
     logging.debug(f"==== LOGOUT FUNCTION; AFTER JTI REFRESH {jti_refresh}")
 
     if jti_access is None or jti_refresh is None:
-        return "NO_JTI_ERROR"
+        return APIErrors.NO_JTI_ERROR
 
     logging.debug("==== setting redis acc token and del ref token")
     redis_db_acc_tok.set(
@@ -143,11 +154,13 @@ def logout_user(jwt_access_token, jwt_refresh_token):
     redis_db_ref_tok.delete(jti_refresh)
     logging.debug("==== working with redis done")
 
+    return APISuccess.OK
+
 
 def refresh_access_token(identy, jti):
     jti_ref_tok = redis_db_ref_tok.get(jti)
     if jti_ref_tok is None:
-        return "REF_TOK_INVALID_ERROR"
+        return APIErrors.REF_TOK_INVALID_ERROR
     redis_db_ref_tok.delete(jti)
 
     refresh_token = create_refresh_token(identity=identy)
@@ -169,11 +182,11 @@ def update_user(user_id, username, password):
     ).first()
     if check_user is not None:
         logging.debug(f"==== check_user: {check_user}")
-        return "USER_EXISTS"
+        return APIErrors.USER_EXISTS
 
     user = User.query.filter_by(id=user_id).first()
     if user is None:
-        return "USER_NOT_FOUND"
+        return APIErrors.USER_NOT_FOUND
 
     hashed_pass = generate_password_hash(password)
 
@@ -182,11 +195,13 @@ def update_user(user_id, username, password):
 
     db.session.commit()
 
+    return APISuccess.OK
+
 
 def get_user_id_by_email(email: str):
     user = User.query.filter_by(email=email).first()
     if user is None:
-        return "USER_NOT_FOUND"
+        return APIErrors.USER_NOT_FOUND
 
     return user.id
 
@@ -194,6 +209,6 @@ def get_user_id_by_email(email: str):
 def get_user_email_by_id(user_id: str):
     user = User.query.filter_by(id=user_id).first()
     if user is None:
-        return "USER_NOT_FOUND"
+        return APIErrors.USER_NOT_FOUND
 
     return user.email
