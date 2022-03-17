@@ -13,8 +13,8 @@ from service.user_logic import register_new_user_cli
 def create_app():
     app = Flask(__name__)
     init_db(app)
-    migrate = Migrate(app, db)
     app.app_context().push()
+    migrate = Migrate(app, db)
 
     # Here you can globally configure all the ways you want to allow JWTs to
     # be sent to your web application. By default, this will be only headers.
