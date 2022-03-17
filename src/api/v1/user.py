@@ -132,12 +132,12 @@ def refresh_tokens():
     return resp
 
 
-@user.route("/auth_history", methods=["GET"])
+@user.route("/auth_history/", methods=["GET"])
+@user.route('/auth_history/page/<int:page>', methods=["GET"])
 @jwt_required()
-def auth_history():
+def auth_history(page=1):
     identy = get_jwt_identity()
-
-    result = get_auth_history(identy)
+    result = get_auth_history(identy, page)
 
     if result == "NO_SUCH_USER":
         return Response(status=HTTPStatus.NOT_FOUND, mimetype="application/json")

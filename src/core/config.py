@@ -16,6 +16,7 @@ class Settings(BaseSettings):
 
     access_token_filetime: int = Field(os.getenv("ACCESS_TOKEN_LIFETIME"))
     refresh_token_filetime: int = Field(os.getenv("REFRESH_TOKEN_LIFETIME"))
+    auth_history_per_page: int = 10
 
 
 settings = Settings()

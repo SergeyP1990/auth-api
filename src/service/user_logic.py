@@ -104,13 +104,16 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
     return access_token, refresh_token
 
 
-def get_auth_history(user_identy):
+def get_auth_history(user_identy, page):
     user = User.query.filter_by(email=user_identy).first()
     if not user:
         return "NO_SUCH_USER"
 
     user_id = user.id
-    auth_history = AuthHistory.query.filter_by(user_id=user_id).all()
+    auth_history = AuthHistory.query.filter_by(user_id=user_id).paginate(
+        page=page,
+        per_page=settings.auth_history_per_page
+    )
 
     result = []
     for record in auth_history:
