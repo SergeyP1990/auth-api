@@ -42,7 +42,7 @@ def create_app():
 
     jwt.init_app(app)
 
-    add_role("superadmin")
+    # add_role("superadmin")
 
     app.cli.add_command(register_new_user_cli)
     app.cli.add_command(assign_superuser)

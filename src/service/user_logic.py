@@ -3,7 +3,7 @@ from datetime import timedelta
 from functools import wraps
 
 import click
-from flask import jsonify
+from flask import jsonify, Response
 from flask.cli import with_appcontext
 from flask_jwt_extended import JWTManager
 from flask_jwt_extended import create_access_token
@@ -11,6 +11,7 @@ from flask_jwt_extended import create_refresh_token
 from flask_jwt_extended import decode_token
 from flask_jwt_extended import get_jti
 from flask_jwt_extended import get_jwt
+from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import verify_jwt_in_request
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -19,6 +20,7 @@ from db.db import db
 from db.db import redis_db_acc_tok, redis_db_ref_tok
 from db.models import User, AuthHistory
 from api.v1.error_messages import APISuccess, APIErrors
+from service.role_logic import check_user_role_by_email, check_user_role, Role
 
 jwt = JWTManager()
 
@@ -26,19 +28,25 @@ jwt = JWTManager()
 # Here is a custom decorator that verifies the JWT is present in the request,
 # as well as insuring that the JWT has a claim indicating that this user is
 # an administrator
-def admin_required():
+def required_role(roles):
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
             verify_jwt_in_request()
-            claims = get_jwt()
-            if claims["is_administrator"]:
+            identy = get_jwt_identity()
+
+            superadmin_check = check_user_role_by_email(identy, "superadmin")
+            if superadmin_check == APISuccess.OK:
                 return fn(*args, **kwargs)
             else:
-                return jsonify(msg="Admins only!"), 403
-
+                for role_name in roles:
+                    print(f"CHECKING ROLE {role_name} ON USER {identy}")
+                    check_role = check_user_role_by_email(identy, role_name)
+                    if check_role != APISuccess.OK:
+                        print(f"CHECKING FAIL {check_role.phrase}")
+                        return Response(status=APIErrors.FORBIDDEN.http_status, mimetype="application/json")
+                return fn(*args, **kwargs)
         return decorator
-
     return wrapper
 
 
