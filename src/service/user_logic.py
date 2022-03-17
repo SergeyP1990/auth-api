@@ -132,7 +132,7 @@ def get_auth_history(user_identy, page):
     auth_history = AuthHistory.query.filter_by(user_id=user_id).paginate(
         page=page,
         per_page=settings.auth_history_per_page
-    )
+    ).items
 
     result = []
     for record in auth_history:
