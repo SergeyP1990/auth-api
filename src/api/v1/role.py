@@ -71,7 +71,7 @@ def user_role_crud(user_id, role_id):
 
 
 @role_routes.route("/user/<user_id>/role/<role_id>", methods=["GET"])
-@required_role(("admin", "role_checker"))
+@required_role("admin", "role_checker")
 def user_role_get(user_id, role_id):
     identy = get_jwt_identity()
     if (

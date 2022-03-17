@@ -25,10 +25,7 @@ from service.role_logic import check_user_role_by_email, check_user_role, Role
 jwt = JWTManager()
 
 
-# Here is a custom decorator that verifies the JWT is present in the request,
-# as well as insuring that the JWT has a claim indicating that this user is
-# an administrator
-def required_role(roles):
+def required_role(*roles):
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
@@ -40,12 +37,13 @@ def required_role(roles):
                 return fn(*args, **kwargs)
             else:
                 for role_name in roles:
-                    print(f"CHECKING ROLE {role_name} ON USER {identy}")
+                    logging.debug(f"CHECKING ROLE {role_name} ON USER {identy}")
                     check_role = check_user_role_by_email(identy, role_name)
-                    if check_role != APISuccess.OK:
-                        print(f"CHECKING FAIL {check_role.phrase}")
-                        return Response(status=APIErrors.FORBIDDEN.http_status, mimetype="application/json")
-                return fn(*args, **kwargs)
+                    if check_role == APISuccess.OK:
+                        logging.debug(f"CHECKS GOOD {check_role.phrase}")
+                        return fn(*args, **kwargs)
+                    logging.debug(f"CHECKS FAIL {check_role.phrase}")
+                    return Response(status=APIErrors.FORBIDDEN.http_status, mimetype="application/json")
         return decorator
     return wrapper
 
