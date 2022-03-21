@@ -147,3 +147,8 @@ def auth_history(page=1):
     result.status = HTTPStatus.OK
     result.mimetype = "application/json"
     return result
+
+
+@user.route("/auth/yandex/")
+def yandex_oauth():
+    pass
