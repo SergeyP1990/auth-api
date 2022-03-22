@@ -9,6 +9,8 @@ from service.role_logic import assign_superuser, add_role
 from service.user_logic import jwt
 from service.user_logic import register_new_user_cli
 
+from service.oauth import oauth
+
 
 def create_app():
     app = Flask(__name__)
@@ -35,11 +37,16 @@ def create_app():
 
     app.config["JWT_REFRESH_CSRF_HEADER_NAME"] = "X-CSRF-TOKEN-REF"
 
+    app.config["YANDEX_CLIENT_ID"] = "3c5eca2d774e4b5ab07c394fd596f207"
+    app.config["YANDEX_CLIENT_SECRET"] = "5400b421613e42839d2669348e1c4765"
+    app.config['SECRET_KEY'] = 'the random string'
+
     from api.v1 import user, role
 
     app.register_blueprint(user.user)
     app.register_blueprint(role.role_routes)
 
+    oauth.init_app(app)
     jwt.init_app(app)
 
     app.cli.add_command(register_new_user_cli)
