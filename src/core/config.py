@@ -19,4 +19,12 @@ class Settings(BaseSettings):
     auth_history_per_page: int = 10
 
 
+class Jaeger(BaseSettings):
+    JAEGER_TYPE: str = "const"
+    REPORTING_HOST: str = "jaeger"
+    REPORTING_PORT: int = 6831
+    SERVICE_NAME: str = "auth_app"
+
+
+jaeger_settings = Jaeger()
 settings = Settings()

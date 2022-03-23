@@ -1,11 +1,12 @@
 from datetime import timedelta
 
-from flask import Flask
+from flask import Flask, request
 from flask_migrate import Migrate
 
 from core.config import settings
 from db.db import init_db, db
-from service.role_logic import assign_superuser, add_role
+from middleware import init_trace
+from service.role_logic import assign_superuser
 from service.user_logic import jwt
 from service.user_logic import register_new_user_cli
 
@@ -13,6 +14,7 @@ from service.user_logic import register_new_user_cli
 def create_app():
     app = Flask(__name__)
     init_db(app)
+    init_trace(app)
     app.app_context().push()
     migrate = Migrate(app, db)
 
@@ -49,3 +51,10 @@ def create_app():
 
 
 application = create_app()
+
+
+@application.before_request
+def before_request():
+    request_id = request.headers.get('X-Request-Id')
+    if not request_id:
+        raise RuntimeError('request id is requred')
