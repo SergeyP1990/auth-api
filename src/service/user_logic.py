@@ -87,7 +87,12 @@ def register_new_user_cli(user_login: str, password: str):
         return
 
 
-def login_user(user_login: str, password: str, user_agent: str, host: str):
+def login_user(user_login: str,
+               password: str,
+               user_agent: str,
+               host: str,
+               user_platform: str
+               ):
 
     user = User.query.filter_by(email=user_login).first()
 
@@ -95,7 +100,11 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
         logging.debug("==== NO USER WITH THIS EMAIL")
         return APIErrors.AUTH_FAILED
 
-    auth_record = AuthHistory(user_id=user.id, user_agent=user_agent, host=host)
+    auth_record = AuthHistory(user_id=user.id,
+                              user_agent=user_agent,
+                              host=host,
+                              user_platform=user_platform
+                              )
     if not check_password_hash(user.password, password):
         logging.debug("==== WRONG PASSWORD")
         auth_record.auth_result = "denied"
@@ -139,6 +148,7 @@ def get_auth_history(user_identy, page):
             "ip_address": record.host,
             "user_agent": record.user_agent,
             "result": record.auth_result,
+            "user_platform": record.user_platform,
         }
         result.append(di)
 
