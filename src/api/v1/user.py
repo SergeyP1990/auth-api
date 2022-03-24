@@ -151,14 +151,23 @@ def auth_history(page=1):
     return result
 
 
-@user.route("/auth/yandex_login")
+@user.route("/yandex_login")
 def yandex_oauth():
     redirect_uri = url_for('user.yandex_auth', _external=True)
-    return oauth.yandex.authorize_redirect("https://oauth.yandex.ru/verification_code")
+    print(redirect_uri)
+    # redirect = oauth.yandex.authorize_redirect(redirect_uri)
+    redirect = oauth.yandex.authorize_redirect(redirect_uri)
+
+    # print(f"==== REDIRECT: {redirect.get_data(as_text=True)}")
+    return redirect
 
 
-@user.route("yandex_auth")
+@user.route("/yandex_auth")
 def yandex_auth():
-    token = oauth.google.authorize_access_token()
+    print(f"==== YA AUTH ARGS: {request.args}")
+    token = oauth.yandex.authorize_access_token()
+    print(f"==== TOKEN GET")
+    print(f"==== TOKEN: {token}")
     user_current = token.get('userinfo')
+    print(f"==== CURRENT USER: {user_current}")
     return Response(response=user_current, status=APISuccess.OK, mimetype="application/json")
