@@ -75,7 +75,6 @@ def login():
         host = request.headers["Host"]
 
         user_platform = request.user_agent.platform
-        print(user_platform)
         if username is None or password is None:
             return Response(status=HTTPStatus.BAD_REQUEST, mimetype="application/json")
 
