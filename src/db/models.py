@@ -48,12 +48,12 @@ class User(MixinIdDate):
         return f"<User {self.email}>"
 
 
-class SocialAccount(db.Model):
+class SocialAccount(MixinIdDate):
     __tablename__ = 'social_account'
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True)
+    # id = db.Column(UUID(as_uuid=True), primary_key=True)
     user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('users.id'), nullable=False)
-    user = db.relationship(User, backref=db.backref('social_accounts', lazy=True))
+    user = db.relationship("User", backref=db.backref('social_account', lazy=True))
 
     social_id = db.Column(db.Text, nullable=False)
     social_name = db.Column(db.Text, nullable=False)

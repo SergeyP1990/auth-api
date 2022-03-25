@@ -73,13 +73,16 @@ def register_new_user(user_login: str, password: str):
 
 
 @click.command()
-@click.argument("user_login")
-@click.argument("password")
 @with_appcontext
 def register_new_user_social_account():
+    new_user = User(email="social_login@soc.com", password="!")
     new_social_acc = SocialAccount(social_id="1hc6v8bx3q789kjn0", social_name="noodle")
+    new_user.social_account.append(new_social_acc)
+    print(f"==== DB NEW SA:: {new_social_acc}")
+    print(f"==== DB NEW U:: {new_user}")
 
-    db.session.add(new_social_acc)
+    # return
+    db.session.add(new_user)
     db.session.commit()
 
 

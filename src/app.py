@@ -7,7 +7,7 @@ from core.config import settings
 from db.db import init_db, db
 from service.role_logic import assign_superuser, add_role
 from service.user_logic import jwt
-from service.user_logic import register_new_user_cli
+from service.user_logic import register_new_user_cli, register_new_user_social_account
 
 from service.oauth import oauth
 
@@ -51,6 +51,7 @@ def create_app():
 
     app.cli.add_command(register_new_user_cli)
     app.cli.add_command(assign_superuser)
+    app.cli.add_command(register_new_user_social_account)
 
     return app
 
