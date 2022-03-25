@@ -18,7 +18,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from core.config import settings
 from db.db import db
 from db.db import redis_db_acc_tok, redis_db_ref_tok
-from db.models import User, AuthHistory
+from db.models import User, AuthHistory, SocialAccount
 from api.v1.error_messages import APISuccess, APIErrors
 from service.role_logic import check_user_role_by_email, check_user_role, Role
 
@@ -72,8 +72,15 @@ def register_new_user(user_login: str, password: str):
     return APISuccess.OK
 
 
+@click.command()
+@click.argument("user_login")
+@click.argument("password")
+@with_appcontext
 def register_new_user_social_account():
-    pass
+    new_social_acc = SocialAccount(social_id="1hc6v8bx3q789kjn0", social_name="noodle")
+
+    db.session.add(new_social_acc)
+    db.session.commit()
 
 
 @click.command()
@@ -124,8 +131,10 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
 
     return access_token, refresh_token
 
+
 def login_user_social_account():
     pass
+
 
 def get_auth_history(user_identy, page):
     user = User.query.filter_by(email=user_identy).first()
