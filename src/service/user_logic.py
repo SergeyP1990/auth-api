@@ -72,6 +72,10 @@ def register_new_user(user_login: str, password: str):
     return APISuccess.OK
 
 
+def register_new_user_social_account():
+    pass
+
+
 @click.command()
 @click.argument("user_login")
 @click.argument("password")
@@ -120,6 +124,8 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
 
     return access_token, refresh_token
 
+def login_user_social_account():
+    pass
 
 def get_auth_history(user_identy, page):
     user = User.query.filter_by(email=user_identy).first()

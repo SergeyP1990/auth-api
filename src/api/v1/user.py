@@ -1,7 +1,7 @@
 import logging
 from http import HTTPStatus
 
-from flask import Blueprint, request, Response, url_for
+from flask import Blueprint, request, Response, url_for, jsonify
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
@@ -168,6 +168,14 @@ def yandex_auth():
     token = oauth.yandex.authorize_access_token()
     print(f"==== TOKEN GET")
     print(f"==== TOKEN: {token}")
-    user_current = token.get('userinfo')
-    print(f"==== CURRENT USER: {user_current}")
-    return Response(response=user_current, status=APISuccess.OK, mimetype="application/json")
+    # user_current = token.get('userinfo')
+    data = oauth.yandex.userinfo(token=token)
+    print(f"==== DATA: {data}")
+
+    res = {"email": data["emails"], "id": data["id"]}
+    print(f"==== RESP DATA: {res}")
+
+    resp = jsonify(res)
+    resp.status = HTTPStatus.OK
+    resp.mimetype = "application/json"
+    return resp
