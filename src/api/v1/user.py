@@ -1,7 +1,7 @@
 import logging
 from http import HTTPStatus
 
-from flask import Blueprint, request, Response
+from flask import Blueprint, request, Response, url_for, jsonify
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
@@ -11,7 +11,9 @@ from flask_jwt_extended import unset_jwt_cookies
 
 from service.role_logic import check_user_role_by_email
 from service.user_logic import register_new_user, login_user, logout_user, refresh_access_token, update_user, \
-    get_auth_history, get_user_id_by_email
+    get_auth_history, get_user_id_by_email, login_user_social_account
+from service.oauth import oauth
+
 from api.v1.error_messages import APISuccess, APIErrors
 
 
@@ -147,3 +149,67 @@ def auth_history(page=1):
     result.status = HTTPStatus.OK
     result.mimetype = "application/json"
     return result
+
+
+@user.route("/yandex_login")
+def yandex_oauth():
+    redirect_uri = url_for('user.yandex_auth', _external=True)
+    logging.debug(f"==== REDIRECT URI: {redirect_uri}")
+    redirect = oauth.yandex.authorize_redirect(redirect_uri)
+
+    return redirect
+
+
+@user.route("/yandex_auth")
+def yandex_auth():
+
+    user_agent = request.headers["User-Agent"]
+    host = request.headers["Host"]
+
+    logging.debug(f"==== YA AUTH ARGS: {request.args}")
+    token = oauth.yandex.authorize_access_token()
+    logging.debug(f"==== TOKEN GET")
+    logging.debug(f"==== TOKEN: {token}")
+
+    data = oauth.yandex.userinfo(token=token)
+    logging.debug(f"==== DATA: {data}")
+
+    result = login_user_social_account(social_id=data["id"], social_name="yandex", host=host, user_agent=user_agent, email=data["emails"][0])
+
+    resp = Response(status=HTTPStatus.OK, mimetype="application/json")
+
+    set_access_cookies(resp, result[0])
+    set_refresh_cookies(resp, result[1])
+    return resp
+
+
+@user.route("/google_login")
+def google_oauth():
+    redirect_uri = url_for("user.google_auth", _external=True)
+    logging.debug(f"==== REDIRECT URI: {redirect_uri}")
+    redirect = oauth.google.authorize_redirect(redirect_uri)
+
+    return redirect
+
+
+@user.route("/google_auth")
+def google_auth():
+
+    user_agent = request.headers["User-Agent"]
+    host = request.headers["Host"]
+
+    logging.debug(f"==== GOOGLE AUTH ARGS: {request.args}")
+    token = oauth.google.authorize_access_token()
+    logging.debug(f"==== TOKEN GET")
+    logging.debug(f"==== TOKEN: {token}")
+
+    data = oauth.google.userinfo(token=token)
+    logging.debug(f"==== DATA: {data}")
+
+    result = login_user_social_account(social_id=data["sub"], social_name="google", host=host, user_agent=user_agent, email=data["email"])
+
+    resp = Response(status=HTTPStatus.OK, mimetype="application/json")
+
+    set_access_cookies(resp, result[0])
+    set_refresh_cookies(resp, result[1])
+    return resp

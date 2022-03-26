@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import timedelta
 from functools import wraps
 
@@ -18,7 +19,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from core.config import settings
 from db.db import db
 from db.db import redis_db_acc_tok, redis_db_ref_tok
-from db.models import User, AuthHistory
+from db.models import User, AuthHistory, SocialAccount
 from api.v1.error_messages import APISuccess, APIErrors
 from service.role_logic import check_user_role_by_email, check_user_role, Role
 
@@ -114,6 +115,44 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
         ex=timedelta(minutes=settings.refresh_token_filetime),
     )
 
+    auth_record.auth_result = "success"
+    db.session.add(auth_record)
+    db.session.commit()
+
+    return access_token, refresh_token
+
+
+def login_user_social_account(social_id, social_name, user_agent, host, email=None):
+    social_account = SocialAccount.query.filter_by(social_id=social_id, social_name=social_name).first()
+
+    if social_account is None:
+        if email is None:
+            email = f"{uuid.uuid4()}@{social_name}.org"
+
+        new_user = User(email=email, password="!")
+        new_social_acc = SocialAccount(social_id=social_id, social_name=social_name)
+        new_user.social_account.append(new_social_acc)
+        logging.debug(f"==== DB NEW SA:: {new_social_acc}")
+        logging.debug(f"==== DB NEW U:: {new_user}")
+
+        db.session.add(new_user)
+        db.session.commit()
+        social_account = new_social_acc
+    logging.debug(f"==== SOCIAL ACC FROM DB: {social_account.user_id}")
+
+    access_token = create_access_token(identity=email)
+    refresh_token = create_refresh_token(identity=email)
+
+    refresh_token_id = get_jti(refresh_token)
+    logging.debug(f"==== REFRESH TOKEN: {refresh_token_id}")
+    redis_db_ref_tok.set(
+        refresh_token_id,
+        refresh_token,
+        ex=timedelta(minutes=settings.refresh_token_filetime),
+    )
+
+
+    auth_record = AuthHistory(user_id=social_account.user_id, user_agent=user_agent, host=host)
     auth_record.auth_result = "success"
     db.session.add(auth_record)
     db.session.commit()
