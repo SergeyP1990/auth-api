@@ -78,6 +78,7 @@ def user_role_get(user_id, role_id):
 
 
 @role_routes.route("/user/role_check", methods=["GET"])
+@jwt_required
 def user_role_check():
     identy = get_jwt_identity()
     request_data = request.get_json()
