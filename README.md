@@ -7,9 +7,9 @@
 3) Трассировка - https://github.com/SergeyP1990/auth-api/issues/30
 4) Партицирование - https://github.com/SergeyP1990/auth-api/issues/31
 
-Авторизация через OAuth доступна через сервис `google` и `yandex`. Для работы необходимо указать клиентские id и secret в .env файле (как в [примере](https://github.com/SergeyP1990/auth-api/blob/ef66674e75a4dfab746a27f2b6adc6545e0c16df/example.env#L18-L22))
+Авторизация через OAuth доступна через сервис `google` и `yandex` на ендпоинтах `/user/google_login` и `/user/yandex_login` соответственно. Для работы необходимо указать клиентские id и secret в .env файле (как в [примере](https://github.com/SergeyP1990/auth-api/blob/ef66674e75a4dfab746a27f2b6adc6545e0c16df/example.env#L18-L22))
 
-
+Интеграция с сервисом `async-api` затрагивает изменения в репозитории async-api, а именно этот [pull request](https://github.com/SergeyP1990/async-api/commit/5c1acebb1caa454ecdc66efee571e8b70c58b6d1) (и небольшой [фикс](https://github.com/SergeyP1990/async-api/commit/7834d3f9d1a81c58b230c686d29c39dfeead534d) для него следом). Фильмам в `async-api` выставляются флаги с требованием подписки `subscribe_required`. Наличие роли `subscriber` у пользователя позволяет ему получить доступ к фильму, а отсутствие этой роли приводит к возврату ошибки.
 
 ### Требования:
   - python3 >= 3.8.10
