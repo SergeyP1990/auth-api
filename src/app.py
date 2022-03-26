@@ -1,9 +1,10 @@
 import logging
 from datetime import timedelta
 
-from flask import Flask
+from flask import Flask, request
 from flask_migrate import Migrate
 
+from middleware import init_trace
 from core.config import settings
 from db.db import init_db, db
 from service.oauth import oauth
@@ -18,6 +19,7 @@ def create_app():
 
     app = Flask(__name__)
     init_db(app)
+    init_trace(app)
     app.app_context().push()
     migrate = Migrate(app, db)
     db.create_all()
@@ -64,3 +66,10 @@ def create_app():
 
 
 application = create_app()
+
+
+@application.before_request
+def before_request():
+    request_id = request.headers.get('X-Request-Id')
+    if not request_id:
+        raise RuntimeError('request id is requred')
