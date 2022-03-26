@@ -11,17 +11,16 @@ from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token
 from flask_jwt_extended import decode_token
 from flask_jwt_extended import get_jti
-from flask_jwt_extended import get_jwt
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import verify_jwt_in_request
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from api.v1.error_messages import APISuccess, APIErrors
 from core.config import settings
 from db.db import db
 from db.db import redis_db_acc_tok, redis_db_ref_tok
 from db.models import User, AuthHistory, SocialAccount
-from api.v1.error_messages import APISuccess, APIErrors
-from service.role_logic import check_user_role_by_email, check_user_role, Role
+from service.role_logic import check_user_role_by_email
 
 jwt = JWTManager()
 
@@ -44,8 +43,13 @@ def required_role(*roles):
                         logging.debug(f"CHECKS GOOD {check_role.phrase}")
                         return fn(*args, **kwargs)
                     logging.debug(f"CHECKS FAIL {check_role.phrase}")
-                    return Response(status=APIErrors.FORBIDDEN.http_status, mimetype="application/json")
+                    return Response(
+                        status=APIErrors.FORBIDDEN.http_status,
+                        mimetype="application/json",
+                    )
+
         return decorator
+
     return wrapper
 
 
@@ -132,7 +136,9 @@ def login_user(user_login: str,
 
 
 def login_user_social_account(social_id, social_name, user_agent, host, email=None):
-    social_account = SocialAccount.query.filter_by(social_id=social_id, social_name=social_name).first()
+    social_account = SocialAccount.query.filter_by(
+        social_id=social_id, social_name=social_name
+    ).first()
 
     if social_account is None:
         if email is None:
@@ -160,8 +166,9 @@ def login_user_social_account(social_id, social_name, user_agent, host, email=No
         ex=timedelta(minutes=settings.refresh_token_filetime),
     )
 
-
-    auth_record = AuthHistory(user_id=social_account.user_id, user_agent=user_agent, host=host)
+    auth_record = AuthHistory(
+        user_id=social_account.user_id, user_agent=user_agent, host=host
+    )
     auth_record.auth_result = "success"
     db.session.add(auth_record)
     db.session.commit()
@@ -175,10 +182,11 @@ def get_auth_history(user_identy, page):
         return APIErrors.USER_NOT_FOUND
 
     user_id = user.id
-    auth_history = AuthHistory.query.filter_by(user_id=user_id).paginate(
-        page=page,
-        per_page=settings.auth_history_per_page
-    ).items
+    auth_history = (
+        AuthHistory.query.filter_by(user_id=user_id)
+        .paginate(page=page, per_page=settings.auth_history_per_page)
+        .items
+    )
 
     result = []
     for record in auth_history:
