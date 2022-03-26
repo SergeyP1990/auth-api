@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import timedelta
 from functools import wraps
 
@@ -73,20 +74,6 @@ def register_new_user(user_login: str, password: str):
 
 
 @click.command()
-@with_appcontext
-def register_new_user_social_account():
-    new_user = User(email="social_login@soc.com", password="!")
-    new_social_acc = SocialAccount(social_id="1hc6v8bx3q789kjn0", social_name="noodle")
-    new_user.social_account.append(new_social_acc)
-    print(f"==== DB NEW SA:: {new_social_acc}")
-    print(f"==== DB NEW U:: {new_user}")
-
-    # return
-    db.session.add(new_user)
-    db.session.commit()
-
-
-@click.command()
 @click.argument("user_login")
 @click.argument("password")
 @with_appcontext
@@ -135,8 +122,42 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
     return access_token, refresh_token
 
 
-def login_user_social_account():
-    pass
+def login_user_social_account(social_id, social_name, user_agent, host, email=None):
+    social_account = SocialAccount.query.filter_by(social_id=social_id, social_name=social_name).first()
+
+    if social_account is None:
+        if email is None:
+            email = f"{uuid.uuid4()}@{social_name}.org"
+
+        new_user = User(email=email, password="!")
+        new_social_acc = SocialAccount(social_id=social_id, social_name=social_name)
+        new_user.social_account.append(new_social_acc)
+        logging.debug(f"==== DB NEW SA:: {new_social_acc}")
+        logging.debug(f"==== DB NEW U:: {new_user}")
+
+        db.session.add(new_user)
+        db.session.commit()
+        social_account = new_social_acc
+    logging.debug(f"==== SOCIAL ACC FROM DB: {social_account.user_id}")
+
+    access_token = create_access_token(identity=email)
+    refresh_token = create_refresh_token(identity=email)
+
+    refresh_token_id = get_jti(refresh_token)
+    logging.debug(f"==== REFRESH TOKEN: {refresh_token_id}")
+    redis_db_ref_tok.set(
+        refresh_token_id,
+        refresh_token,
+        ex=timedelta(minutes=settings.refresh_token_filetime),
+    )
+
+
+    auth_record = AuthHistory(user_id=social_account.user_id, user_agent=user_agent, host=host)
+    auth_record.auth_result = "success"
+    db.session.add(auth_record)
+    db.session.commit()
+
+    return access_token, refresh_token
 
 
 def get_auth_history(user_identy, page):
