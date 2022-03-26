@@ -1,7 +1,7 @@
 import logging
 from http import HTTPStatus
 
-from flask import Blueprint, request, Response
+from flask import Blueprint, request, Response, url_for
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
@@ -9,11 +9,19 @@ from flask_jwt_extended import set_access_cookies
 from flask_jwt_extended import set_refresh_cookies
 from flask_jwt_extended import unset_jwt_cookies
 
-from service.role_logic import check_user_role_by_email
-from service.user_logic import register_new_user, login_user, logout_user, refresh_access_token, update_user, \
-    get_auth_history, get_user_id_by_email
 from api.v1.error_messages import APISuccess, APIErrors
-
+from service.oauth import oauth
+from service.role_logic import check_user_role_by_email
+from service.user_logic import (
+    register_new_user,
+    login_user,
+    logout_user,
+    refresh_access_token,
+    update_user,
+    get_auth_history,
+    get_user_id_by_email,
+    login_user_social_account,
+)
 
 user = Blueprint("user", __name__, url_prefix="/user")
 
@@ -31,7 +39,11 @@ def register():
 
         result = register_new_user(username, password)
 
-        return Response(response=result.description, status=result.http_status, mimetype="application/json")
+        return Response(
+            response=result.description,
+            status=result.http_status,
+            mimetype="application/json",
+        )
 
 
 @user.route("/", methods=["PUT"])
@@ -47,10 +59,14 @@ def update_login_password():
         current_user_identy = get_jwt_identity()
         current_user_id = get_user_id_by_email(current_user_identy)
         if isinstance(current_user_id, APIErrors):
-            return Response(status=current_user_id.http_status, mimetype="application/json")
+            return Response(
+                status=current_user_id.http_status, mimetype="application/json"
+            )
         if user_id != current_user_id:
             if check_user_role_by_email(current_user_identy, "admin") != APISuccess.OK:
-                return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
+                return Response(
+                    status=HTTPStatus.FORBIDDEN, mimetype="application/json"
+                )
 
         if username is None or password is None or user_id is None:
             return Response(status=HTTPStatus.BAD_REQUEST, mimetype="application/json")
@@ -74,6 +90,7 @@ def login():
         user_agent = request.headers["User-Agent"]
         host = request.headers["Host"]
 
+        user_platform = request.user_agent.platform
         if username is None or password is None:
             return Response(status=HTTPStatus.BAD_REQUEST, mimetype="application/json")
 
@@ -85,7 +102,7 @@ def login():
                 mimetype="application/json",
             )
 
-        result = login_user(username, password, user_agent, host)
+        result = login_user(username, password, user_agent, host, user_platform)
         if isinstance(result, APIErrors):
             return Response(status=result.http_status, mimetype="application/json")
 
@@ -133,7 +150,7 @@ def refresh_tokens():
 
 
 @user.route("/auth_history/", methods=["GET"])
-@user.route('/auth_history/page/<int:page>', methods=["GET"])
+@user.route("/auth_history/page/<int:page>", methods=["GET"])
 @jwt_required()
 def auth_history(page=1):
     identy = get_jwt_identity()
@@ -147,3 +164,79 @@ def auth_history(page=1):
     result.status = HTTPStatus.OK
     result.mimetype = "application/json"
     return result
+
+
+@user.route("/yandex_login")
+def yandex_oauth():
+    redirect_uri = url_for("user.yandex_auth", _external=True)
+    logging.debug(f"==== REDIRECT URI: {redirect_uri}")
+    redirect = oauth.yandex.authorize_redirect(redirect_uri)
+
+    return redirect
+
+
+@user.route("/yandex_auth")
+def yandex_auth():
+
+    user_agent = request.headers["User-Agent"]
+    host = request.headers["Host"]
+
+    logging.debug(f"==== YA AUTH ARGS: {request.args}")
+    token = oauth.yandex.authorize_access_token()
+    logging.debug(f"==== TOKEN GET")
+    logging.debug(f"==== TOKEN: {token}")
+
+    data = oauth.yandex.userinfo(token=token)
+    logging.debug(f"==== DATA: {data}")
+
+    result = login_user_social_account(
+        social_id=data["id"],
+        social_name="yandex",
+        host=host,
+        user_agent=user_agent,
+        email=data["emails"][0],
+    )
+
+    resp = Response(status=HTTPStatus.OK, mimetype="application/json")
+
+    set_access_cookies(resp, result[0])
+    set_refresh_cookies(resp, result[1])
+    return resp
+
+
+@user.route("/google_login")
+def google_oauth():
+    redirect_uri = url_for("user.google_auth", _external=True)
+    logging.debug(f"==== REDIRECT URI: {redirect_uri}")
+    redirect = oauth.google.authorize_redirect(redirect_uri)
+
+    return redirect
+
+
+@user.route("/google_auth")
+def google_auth():
+
+    user_agent = request.headers["User-Agent"]
+    host = request.headers["Host"]
+
+    logging.debug(f"==== GOOGLE AUTH ARGS: {request.args}")
+    token = oauth.google.authorize_access_token()
+    logging.debug(f"==== TOKEN GET")
+    logging.debug(f"==== TOKEN: {token}")
+
+    data = oauth.google.userinfo(token=token)
+    logging.debug(f"==== DATA: {data}")
+
+    result = login_user_social_account(
+        social_id=data["sub"],
+        social_name="google",
+        host=host,
+        user_agent=user_agent,
+        email=data["email"],
+    )
+
+    resp = Response(status=HTTPStatus.OK, mimetype="application/json")
+
+    set_access_cookies(resp, result[0])
+    set_refresh_cookies(resp, result[1])
+    return resp

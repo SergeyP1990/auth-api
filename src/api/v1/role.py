@@ -13,9 +13,7 @@ role_routes = Blueprint("role_routes", __name__, url_prefix="/role")
 @role_routes.route("/", methods=["GET", "POST"])
 @required_role("admin")
 def role():
-    # identy = get_jwt_identity()
-    # if service_role.check_user_role_by_email(identy, "admin") != APISuccess.OK:
-    #     return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
+
     if request.method == "POST":
         request_data = request.get_json()
         role_name = request_data["name"]
@@ -34,9 +32,7 @@ def role():
 @role_routes.route("/<role_id>", methods=["GET", "PUT", "DELETE"])
 @required_role("admin")
 def role_crud(role_id):
-    # identy = get_jwt_identity()
-    # if service_role.check_user_role_by_email(identy, "admin") != APISuccess.OK:
-    #     return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
+
     if request.method == "PUT":
         request_data = request.get_json()
         role_name = request_data["name"]
@@ -57,9 +53,6 @@ def role_crud(role_id):
 @role_routes.route("/user/<user_id>/role/<role_id>", methods=["PUT", "DELETE"])
 @required_role("admin")
 def user_role_crud(user_id, role_id):
-    # identy = get_jwt_identity()
-    # if service_role.check_user_role_by_email(identy, "admin") != APISuccess.OK:
-    #     return Response(status=HTTPStatus.FORBIDDEN, mimetype="application/json")
 
     if request.method == "PUT":
         assign = service_role.assign_user_role(user_id=user_id, role_id=role_id)
@@ -82,3 +75,18 @@ def user_role_get(user_id, role_id):
     check = service_role.check_user_role(user_id=user_id, role_id=role_id)
 
     return Response(status=check.http_status, mimetype="application/json")
+
+
+@role_routes.route("/user/role_check", methods=["GET"])
+def user_role_check():
+    identy = get_jwt_identity()
+    request_data = request.get_json()
+    title = request_data['film_title']
+    if service_role.check_user_role_by_email(identy, "subscriber") == APISuccess.OK:
+        return Response(status=HTTPStatus.OK, mimetype="application/json")
+    elif service_role.check_user_role_by_email(identy, f"{title}_rent") == APISuccess.OK:
+        return Response(status=HTTPStatus.OK, mimetype="application/json")
+    elif service_role.check_user_role_by_email(identy, f"{title}_purchase") == APISuccess.OK:
+        return Response(status=HTTPStatus.OK, mimetype="application/json")
+    else:
+        return Response(status=HTTPStatus.NO_CONTENT, mimetype="application/json")

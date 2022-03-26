@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import timedelta
 from functools import wraps
 
@@ -10,17 +11,16 @@ from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token
 from flask_jwt_extended import decode_token
 from flask_jwt_extended import get_jti
-from flask_jwt_extended import get_jwt
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import verify_jwt_in_request
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from api.v1.error_messages import APISuccess, APIErrors
 from core.config import settings
 from db.db import db
 from db.db import redis_db_acc_tok, redis_db_ref_tok
-from db.models import User, AuthHistory
-from api.v1.error_messages import APISuccess, APIErrors
-from service.role_logic import check_user_role_by_email, check_user_role, Role
+from db.models import User, AuthHistory, SocialAccount
+from service.role_logic import check_user_role_by_email
 
 jwt = JWTManager()
 
@@ -43,8 +43,13 @@ def required_role(*roles):
                         logging.debug(f"CHECKS GOOD {check_role.phrase}")
                         return fn(*args, **kwargs)
                     logging.debug(f"CHECKS FAIL {check_role.phrase}")
-                    return Response(status=APIErrors.FORBIDDEN.http_status, mimetype="application/json")
+                    return Response(
+                        status=APIErrors.FORBIDDEN.http_status,
+                        mimetype="application/json",
+                    )
+
         return decorator
+
     return wrapper
 
 
@@ -87,7 +92,12 @@ def register_new_user_cli(user_login: str, password: str):
         return
 
 
-def login_user(user_login: str, password: str, user_agent: str, host: str):
+def login_user(user_login: str,
+               password: str,
+               user_agent: str,
+               host: str,
+               user_platform: str
+               ):
 
     user = User.query.filter_by(email=user_login).first()
 
@@ -95,7 +105,11 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
         logging.debug("==== NO USER WITH THIS EMAIL")
         return APIErrors.AUTH_FAILED
 
-    auth_record = AuthHistory(user_id=user.id, user_agent=user_agent, host=host)
+    auth_record = AuthHistory(user_id=user.id,
+                              user_agent=user_agent,
+                              host=host,
+                              user_platform=user_platform
+                              )
     if not check_password_hash(user.password, password):
         logging.debug("==== WRONG PASSWORD")
         auth_record.auth_result = "denied"
@@ -121,16 +135,58 @@ def login_user(user_login: str, password: str, user_agent: str, host: str):
     return access_token, refresh_token
 
 
+def login_user_social_account(social_id, social_name, user_agent, host, email=None):
+    social_account = SocialAccount.query.filter_by(
+        social_id=social_id, social_name=social_name
+    ).first()
+
+    if social_account is None:
+        if email is None:
+            email = f"{uuid.uuid4()}@{social_name}.org"
+
+        new_user = User(email=email, password="!")
+        new_social_acc = SocialAccount(social_id=social_id, social_name=social_name)
+        new_user.social_account.append(new_social_acc)
+        logging.debug(f"==== DB NEW SA:: {new_social_acc}")
+        logging.debug(f"==== DB NEW U:: {new_user}")
+
+        db.session.add(new_user)
+        db.session.commit()
+        social_account = new_social_acc
+    logging.debug(f"==== SOCIAL ACC FROM DB: {social_account.user_id}")
+
+    access_token = create_access_token(identity=email)
+    refresh_token = create_refresh_token(identity=email)
+
+    refresh_token_id = get_jti(refresh_token)
+    logging.debug(f"==== REFRESH TOKEN: {refresh_token_id}")
+    redis_db_ref_tok.set(
+        refresh_token_id,
+        refresh_token,
+        ex=timedelta(minutes=settings.refresh_token_filetime),
+    )
+
+    auth_record = AuthHistory(
+        user_id=social_account.user_id, user_agent=user_agent, host=host
+    )
+    auth_record.auth_result = "success"
+    db.session.add(auth_record)
+    db.session.commit()
+
+    return access_token, refresh_token
+
+
 def get_auth_history(user_identy, page):
     user = User.query.filter_by(email=user_identy).first()
     if not user:
         return APIErrors.USER_NOT_FOUND
 
     user_id = user.id
-    auth_history = AuthHistory.query.filter_by(user_id=user_id).paginate(
-        page=page,
-        per_page=settings.auth_history_per_page
-    ).items
+    auth_history = (
+        AuthHistory.query.filter_by(user_id=user_id)
+        .paginate(page=page, per_page=settings.auth_history_per_page)
+        .items
+    )
 
     result = []
     for record in auth_history:
@@ -139,6 +195,7 @@ def get_auth_history(user_identy, page):
             "ip_address": record.host,
             "user_agent": record.user_agent,
             "result": record.auth_result,
+            "user_platform": record.user_platform,
         }
         result.append(di)
 

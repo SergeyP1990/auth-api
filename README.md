@@ -1,15 +1,5 @@
 ## Сервис авторизации
 
-# Ревью:
-1) Исправление значений в env: https://github.com/SergeyP1990/auth-api/issues/19
-2) Именованные миграции: https://github.com/SergeyP1990/auth-api/issues/20
-3) Исправление консольной команды: https://github.com/SergeyP1990/auth-api/issues/21
-4) Коды ответов из http либы: https://github.com/SergeyP1990/auth-api/issues/22
-5) Декоратор для проверки ролей: https://github.com/SergeyP1990/auth-api/issues/23
-6) Ответ "ОК" переделать в enum (в результате переделаны почти все return'ы :smile: ): https://github.com/SergeyP1990/auth-api/issues/24
-7) Пагинация истории аутентификации: https://github.com/SergeyP1990/auth-api/issues/25
-
-
 ### Требования:
   - python3 >= 3.8.10
   - [docker-compose](https://docs.docker.com/compose/install/) >= 1.29.2
