@@ -20,6 +20,7 @@ def create_app():
     init_db(app)
     app.app_context().push()
     migrate = Migrate(app, db)
+    db.create_all()
 
     # Here you can globally configure all the ways you want to allow JWTs to
     # be sent to your web application. By default, this will be only headers.

@@ -76,6 +76,7 @@ def login():
         user_agent = request.headers["User-Agent"]
         host = request.headers["Host"]
 
+        user_platform = request.user_agent.platform
         if username is None or password is None:
             return Response(status=HTTPStatus.BAD_REQUEST, mimetype="application/json")
 
@@ -87,7 +88,7 @@ def login():
                 mimetype="application/json",
             )
 
-        result = login_user(username, password, user_agent, host)
+        result = login_user(username, password, user_agent, host, user_platform)
         if isinstance(result, APIErrors):
             return Response(status=result.http_status, mimetype="application/json")
 
