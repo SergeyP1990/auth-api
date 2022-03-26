@@ -1,5 +1,16 @@
 ## Сервис авторизации
 
+### Спринт 7
+
+1) OAuth аутентификация - https://github.com/SergeyP1990/auth-api/issues/28
+2) Интеграция с async-api - https://github.com/SergeyP1990/auth-api/issues/29
+3) Трассировка - https://github.com/SergeyP1990/auth-api/issues/30
+4) Партицирование - https://github.com/SergeyP1990/auth-api/issues/31
+
+Авторизация через OAuth доступна через сервис `google` и `yandex`. Для работы необходимо указать клиентские id и secret в .env файле (как в [примере](https://github.com/SergeyP1990/auth-api/blob/ef66674e75a4dfab746a27f2b6adc6545e0c16df/example.env#L18-L22))
+
+
+
 ### Требования:
   - python3 >= 3.8.10
   - [docker-compose](https://docs.docker.com/compose/install/) >= 1.29.2
