@@ -1,5 +1,13 @@
 ## Сервис авторизации
 
+### Спринт 7 - Исправления после ревью:
+
+1) Имена провайдеров в виде enum: [ссылка на строки в коммите](https://github.com/SergeyP1990/auth-api/commit/2491cd465dbbe5ca21dad569a8a62f140bc47093#diff-05b21c22714165b86192346a9b2b8bbebbbb49419a5c0a6ed6a552a6f3c188c5R54)
+2) Добавил типизацию: [ссылка на строки в коммите](https://github.com/SergeyP1990/auth-api/commit/2491cd465dbbe5ca21dad569a8a62f140bc47093#diff-2ef609af76559dde6144d6d44224c468b327d7779b63ed32a7be88574a1f70d5R135)
+3) Перенёс ендпоинты OAuth провайдеров в env: [здесь](https://github.com/SergeyP1990/auth-api/commit/2491cd465dbbe5ca21dad569a8a62f140bc47093#diff-a714eca19b6f8db4dbfbd978aa5325b98cc0550fe4c1e7953e8b1eb136cb925aR21) и [здесь](https://github.com/SergeyP1990/auth-api/commit/2491cd465dbbe5ca21dad569a8a62f140bc47093#diff-05b21c22714165b86192346a9b2b8bbebbbb49419a5c0a6ed6a552a6f3c188c5R70)
+4) Унификация авторизации через OAuth: [классы](https://github.com/SergeyP1990/auth-api/commit/2491cd465dbbe5ca21dad569a8a62f140bc47093#diff-05b21c22714165b86192346a9b2b8bbebbbb49419a5c0a6ed6a552a6f3c188c5R9-R51) для работы с провайдерами (базовый абстрактный и две его реализации для google и yandex) и унификация ендпоинтов: [логин](https://github.com/SergeyP1990/auth-api/commit/2491cd465dbbe5ca21dad569a8a62f140bc47093#diff-8078488b461eff1ee0af85396bcf915538c9eae5fa118097288311cc0101f688R169) и [auth для редиректа](https://github.com/SergeyP1990/auth-api/commit/2491cd465dbbe5ca21dad569a8a62f140bc47093#diff-8078488b461eff1ee0af85396bcf915538c9eae5fa118097288311cc0101f688R194)
+5) Ограничение количества запросов: [коммит](https://github.com/SergeyP1990/auth-api/pull/38/commits/853255b7783bd94f248c4f2759e45b39f5afba62)
+
 ### Спринт 7
 
 1) OAuth аутентификация - https://github.com/SergeyP1990/auth-api/issues/28
@@ -7,7 +15,7 @@
 3) Трассировка - https://github.com/SergeyP1990/auth-api/issues/30
 4) Партицирование - https://github.com/SergeyP1990/auth-api/issues/31
 
-Авторизация через OAuth доступна через сервис `google` и `yandex` на ендпоинтах `/user/google_login` и `/user/yandex_login` соответственно. Для работы необходимо указать клиентские id и secret в .env файле (как в [примере](https://github.com/SergeyP1990/auth-api/blob/ef66674e75a4dfab746a27f2b6adc6545e0c16df/example.env#L18-L22))
+Авторизация через OAuth доступна через сервис `google` и `yandex` на ендпоинтах `/user/oauth/login/google` и `/user/oauth/login/yandex` соответственно. Для работы необходимо указать клиентские id и secret в .env файле (как в [примере](https://github.com/SergeyP1990/auth-api/blob/ef66674e75a4dfab746a27f2b6adc6545e0c16df/example.env#L18-L22))
 
 Интеграция с сервисом `async-api` затрагивает изменения в репозитории async-api, а именно этот [pull request](https://github.com/SergeyP1990/async-api/commit/5c1acebb1caa454ecdc66efee571e8b70c58b6d1) (и небольшой [фикс](https://github.com/SergeyP1990/async-api/commit/7834d3f9d1a81c58b230c686d29c39dfeead534d) для него следом). Фильмам в `async-api` выставляются флаги с требованием подписки `subscribe_required`. Наличие роли `subscriber` у пользователя позволяет ему получить доступ к фильму, а отсутствие этой роли приводит к возврату ошибки.
 
