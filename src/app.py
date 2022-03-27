@@ -3,12 +3,14 @@ import logging.config
 from datetime import timedelta
 
 from flask import Flask, request
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_migrate import Migrate
 
-from middleware import init_trace
 from core.config import settings
 from core.logger import LOGGING
 from db.db import init_db, db
+from middleware import init_trace
 from service.oauth import oauth
 from service.role_logic import assign_superuser
 from service.user_logic import jwt
@@ -20,9 +22,19 @@ def create_app():
     logging.config.dictConfig(LOGGING)
 
     app = Flask(__name__)
+
+    limiter = Limiter(
+        app,
+        key_func=get_remote_address,
+        default_limits=["1200 per hour", "20 per minute", "1 per second"]
+    )
+
+    limiter.init_app(app)
     init_db(app)
     init_trace(app)
+
     app.app_context().push()
+
     migrate = Migrate(app, db)
     db.create_all()
 
