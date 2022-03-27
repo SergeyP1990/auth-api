@@ -82,12 +82,17 @@ def user_role_get(user_id, role_id):
 def user_role_check():
     identy = get_jwt_identity()
     request_data = request.get_json()
-    title = request_data['film_title']
+    title = request_data["film_title"]
     if service_role.check_user_role_by_email(identy, "subscriber") == APISuccess.OK:
         return Response(status=HTTPStatus.OK, mimetype="application/json")
-    elif service_role.check_user_role_by_email(identy, f"{title}_rent") == APISuccess.OK:
+    elif (
+        service_role.check_user_role_by_email(identy, f"{title}_rent") == APISuccess.OK
+    ):
         return Response(status=HTTPStatus.OK, mimetype="application/json")
-    elif service_role.check_user_role_by_email(identy, f"{title}_purchase") == APISuccess.OK:
+    elif (
+        service_role.check_user_role_by_email(identy, f"{title}_purchase")
+        == APISuccess.OK
+    ):
         return Response(status=HTTPStatus.OK, mimetype="application/json")
     else:
         return Response(status=HTTPStatus.NO_CONTENT, mimetype="application/json")

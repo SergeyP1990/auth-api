@@ -170,10 +170,18 @@ def auth_history(page=1):
 def oauth_login(provider):
     if provider is None:
         err = APIErrors.EMPTY_PROVIDER_NAME
-        return Response(response=err.description, status=err.http_status, mimetype="application/json")
+        return Response(
+            response=err.description,
+            status=err.http_status,
+            mimetype="application/json",
+        )
     if provider not in [prov.value for prov in OAuthProviders]:
         err = APIErrors.UNSUPPORTED_PROVIDER_NAME
-        return Response(response=err.description, status=err.http_status, mimetype="application/json")
+        return Response(
+            response=err.description,
+            status=err.http_status,
+            mimetype="application/json",
+        )
 
     client = oauth.create_client(provider)
     redirect_uri = url_for(f"user.oauth_auth", provider=provider, _external=True)

@@ -7,7 +7,6 @@ from core.config import settings
 
 
 class BaseOauthProvider:
-
     @classmethod
     @abc.abstractmethod
     def get_user_id(cls, data):
@@ -25,7 +24,6 @@ class BaseOauthProvider:
 
 
 class YandexOauthProvider(BaseOauthProvider):
-
     @classmethod
     def get_user_id(cls, data):
         return data.get("id")
@@ -40,7 +38,6 @@ class YandexOauthProvider(BaseOauthProvider):
 
 
 class GoogleOauthProvider(BaseOauthProvider):
-
     @classmethod
     def get_user_id(cls, data):
         return data.get("sub")

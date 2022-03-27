@@ -12,4 +12,4 @@ def init_trace(app: Flask):
     def before_request():
         request_id = request.headers.get("X-Request-Id")
         parent_span = tracer.get_span()
-        parent_span.set_tag('http.request_id', request_id)
+        parent_span.set_tag("http.request_id", request_id)
