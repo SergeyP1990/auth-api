@@ -2,6 +2,7 @@ import logging
 import uuid
 from datetime import timedelta
 from functools import wraps
+from typing import Optional
 
 import click
 from flask import jsonify, Response
@@ -20,6 +21,7 @@ from core.config import settings
 from db.db import db
 from db.db import redis_db_acc_tok, redis_db_ref_tok
 from db.models import User, AuthHistory, SocialAccount
+from service.oauth import ProvidersNames
 from service.role_logic import check_user_role_by_email
 
 jwt = JWTManager()
@@ -135,7 +137,7 @@ def login_user(user_login: str,
     return access_token, refresh_token
 
 
-def login_user_social_account(social_id, social_name, user_agent, host, email=None):
+def login_user_social_account(social_id: str, social_name: ProvidersNames, user_agent: str, host: str, email: Optional[str] = None):
     social_account = SocialAccount.query.filter_by(
         social_id=social_id, social_name=social_name
     ).first()
