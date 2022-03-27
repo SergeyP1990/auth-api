@@ -1,6 +1,9 @@
 import enum
 from authlib.integrations.flask_client import OAuth
 
+from core.config import settings
+
+
 oauth = OAuth()
 
 
@@ -10,17 +13,17 @@ class ProvidersNames(enum.Enum):
 
 
 oauth.register(
-    name=ProvidersNames.YANDEX,
-    authorize_url="https://oauth.yandex.ru/authorize",
-    access_token_url="https://oauth.yandex.ru/token",
-    userinfo_endpoint="https://login.yandex.ru/info",
+    name=ProvidersNames.YANDEX.value,
+    authorize_url=settings.yandex_authorize_url,
+    access_token_url=settings.yandex_access_token_url,
+    userinfo_endpoint=settings.yandex_userinfo_endpoint,
     client_kwargs={"scope": "login:email"},
 )
 
 oauth.register(
-    name=ProvidersNames.GOOGLE,
-    authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
-    access_token_url="https://oauth2.googleapis.com/token",
-    userinfo_endpoint="https://openidconnect.googleapis.com/v1/userinfo",
+    name=ProvidersNames.GOOGLE.value,
+    authorize_url=settings.google_authorize_url,
+    access_token_url=settings.google_access_token_url,
+    userinfo_endpoint=settings.google_userinfo_endpoint,
     client_kwargs={"scope": "email"},
 )
