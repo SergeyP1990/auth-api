@@ -2,6 +2,7 @@ import logging
 import uuid
 from datetime import timedelta
 from functools import wraps
+from typing import Optional
 
 import click
 from flask import jsonify, Response
@@ -20,6 +21,7 @@ from core.config import settings
 from db.db import db
 from db.db import redis_db_acc_tok, redis_db_ref_tok
 from db.models import User, AuthHistory, SocialAccount
+from service.oauth import OAuthProviders
 from service.role_logic import check_user_role_by_email
 
 jwt = JWTManager()
@@ -92,12 +94,9 @@ def register_new_user_cli(user_login: str, password: str):
         return
 
 
-def login_user(user_login: str,
-               password: str,
-               user_agent: str,
-               host: str,
-               user_platform: str
-               ):
+def login_user(
+    user_login: str, password: str, user_agent: str, host: str, user_platform: str
+):
 
     user = User.query.filter_by(email=user_login).first()
 
@@ -105,11 +104,9 @@ def login_user(user_login: str,
         logging.debug("==== NO USER WITH THIS EMAIL")
         return APIErrors.AUTH_FAILED
 
-    auth_record = AuthHistory(user_id=user.id,
-                              user_agent=user_agent,
-                              host=host,
-                              user_platform=user_platform
-                              )
+    auth_record = AuthHistory(
+        user_id=user.id, user_agent=user_agent, host=host, user_platform=user_platform
+    )
     if not check_password_hash(user.password, password):
         logging.debug("==== WRONG PASSWORD")
         auth_record.auth_result = "denied"
@@ -135,17 +132,25 @@ def login_user(user_login: str,
     return access_token, refresh_token
 
 
-def login_user_social_account(social_id, social_name, user_agent, host, email=None):
+def login_user_social_account(
+    social_id: str,
+    social_name: OAuthProviders,
+    user_agent: str,
+    host: str,
+    email: Optional[str] = None,
+):
     social_account = SocialAccount.query.filter_by(
-        social_id=social_id, social_name=social_name
+        social_id=social_id, social_name=social_name.value
     ).first()
 
     if social_account is None:
         if email is None:
-            email = f"{uuid.uuid4()}@{social_name}.org"
+            email = f"{uuid.uuid4()}@{social_name.value}.org"
 
         new_user = User(email=email, password="!")
-        new_social_acc = SocialAccount(social_id=social_id, social_name=social_name)
+        new_social_acc = SocialAccount(
+            social_id=social_id, social_name=social_name.value
+        )
         new_user.social_account.append(new_social_acc)
         logging.debug(f"==== DB NEW SA:: {new_social_acc}")
         logging.debug(f"==== DB NEW U:: {new_user}")

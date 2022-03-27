@@ -23,6 +23,20 @@ class APIErrors(APIBaseEnum):
         "Invalid ref token",
     )
 
+    EMPTY_PROVIDER_NAME = (
+        4002,
+        "EMPTY_PROVIDER_NAME",
+        HTTPStatus.BAD_REQUEST,
+        "No provider name for OAuth authentication",
+    )
+
+    UNSUPPORTED_PROVIDER_NAME = (
+        4003,
+        "UNSUPPORTED_PROVIDER_NAME",
+        HTTPStatus.BAD_REQUEST,
+        "Provider is unsupported",
+    )
+
     AUTH_FAILED = 4011, "AUTH_FAILED", HTTPStatus.UNAUTHORIZED, "Unauthorized"
     NO_JTI_ERROR = 4012, "NO_JTI_ERROR", HTTPStatus.UNAUTHORIZED, "Unauthorized"
 

@@ -10,7 +10,7 @@ from flask_jwt_extended import set_refresh_cookies
 from flask_jwt_extended import unset_jwt_cookies
 
 from api.v1.error_messages import APISuccess, APIErrors
-from service.oauth import oauth
+from service.oauth import oauth, OAuthProviders
 from service.role_logic import check_user_role_by_email
 from service.user_logic import (
     register_new_user,
@@ -166,73 +166,55 @@ def auth_history(page=1):
     return result
 
 
-@user.route("/yandex_login")
-def yandex_oauth():
-    redirect_uri = url_for("user.yandex_auth", _external=True)
+@user.route("/oauth/login/<string:provider>")
+def oauth_login(provider):
+    if provider is None:
+        err = APIErrors.EMPTY_PROVIDER_NAME
+        return Response(
+            response=err.description,
+            status=err.http_status,
+            mimetype="application/json",
+        )
+    if provider not in [prov.value for prov in OAuthProviders]:
+        err = APIErrors.UNSUPPORTED_PROVIDER_NAME
+        return Response(
+            response=err.description,
+            status=err.http_status,
+            mimetype="application/json",
+        )
+
+    client = oauth.create_client(provider)
+    redirect_uri = url_for(f"user.oauth_auth", provider=provider, _external=True)
     logging.debug(f"==== REDIRECT URI: {redirect_uri}")
-    redirect = oauth.yandex.authorize_redirect(redirect_uri)
+    redirect = client.authorize_redirect(redirect_uri)
 
     return redirect
 
 
-@user.route("/yandex_auth")
-def yandex_auth():
+@user.route("/oauth/auth/<string:provider>")
+def oauth_auth(provider):
 
     user_agent = request.headers["User-Agent"]
     host = request.headers["Host"]
 
+    client = oauth.create_client(provider)
+    oauth_provider = OAuthProviders(provider).provider
     logging.debug(f"==== YA AUTH ARGS: {request.args}")
-    token = oauth.yandex.authorize_access_token()
+    token = client.authorize_access_token()
     logging.debug(f"==== TOKEN GET")
     logging.debug(f"==== TOKEN: {token}")
 
-    data = oauth.yandex.userinfo(token=token)
+    data = client.userinfo(token=token)
     logging.debug(f"==== DATA: {data}")
 
+    user_id = oauth_provider.get_user_id(data)
+    user_email = oauth_provider.get_email(data)
     result = login_user_social_account(
-        social_id=data["id"],
-        social_name="yandex",
+        social_id=user_id,
+        social_name=OAuthProviders(provider),
         host=host,
         user_agent=user_agent,
-        email=data["emails"][0],
-    )
-
-    resp = Response(status=HTTPStatus.OK, mimetype="application/json")
-
-    set_access_cookies(resp, result[0])
-    set_refresh_cookies(resp, result[1])
-    return resp
-
-
-@user.route("/google_login")
-def google_oauth():
-    redirect_uri = url_for("user.google_auth", _external=True)
-    logging.debug(f"==== REDIRECT URI: {redirect_uri}")
-    redirect = oauth.google.authorize_redirect(redirect_uri)
-
-    return redirect
-
-
-@user.route("/google_auth")
-def google_auth():
-
-    user_agent = request.headers["User-Agent"]
-    host = request.headers["Host"]
-
-    logging.debug(f"==== GOOGLE AUTH ARGS: {request.args}")
-    token = oauth.google.authorize_access_token()
-    logging.debug(f"==== TOKEN GET")
-    logging.debug(f"==== TOKEN: {token}")
-
-    data = oauth.google.userinfo(token=token)
-    logging.debug(f"==== DATA: {data}")
-
-    result = login_user_social_account(
-        social_id=data["sub"],
-        social_name="google",
-        host=host,
-        user_agent=user_agent,
-        email=data["email"],
+        email=user_email,
     )
 
     resp = Response(status=HTTPStatus.OK, mimetype="application/json")

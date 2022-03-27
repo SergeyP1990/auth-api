@@ -1,4 +1,5 @@
 import logging
+import logging.config
 from datetime import timedelta
 
 from flask import Flask, request
@@ -6,6 +7,7 @@ from flask_migrate import Migrate
 
 from middleware import init_trace
 from core.config import settings
+from core.logger import LOGGING
 from db.db import init_db, db
 from service.oauth import oauth
 from service.role_logic import assign_superuser
@@ -15,7 +17,7 @@ from service.user_logic import register_new_user_cli
 
 def create_app():
     logging.getLogger("app")
-    logging.basicConfig(level=logging.DEBUG)
+    logging.config.dictConfig(LOGGING)
 
     app = Flask(__name__)
     init_db(app)
@@ -70,6 +72,6 @@ application = create_app()
 
 @application.before_request
 def before_request():
-    request_id = request.headers.get('X-Request-Id')
+    request_id = request.headers.get("X-Request-Id")
     if not request_id:
-        raise RuntimeError('request id is requred')
+        raise RuntimeError("request id is requred")

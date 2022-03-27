@@ -17,7 +17,7 @@ def _setup_jaeger():
 
     config = Config(
         config=jaeger_config,
-        service_name='async-api',
+        service_name="async-api",
         validate=True,
     )
     return config.initialize_tracer()
